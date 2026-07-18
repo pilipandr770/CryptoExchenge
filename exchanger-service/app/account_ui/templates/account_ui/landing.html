@@ -1,9 +1,19 @@
 {% extends "account_ui/base.html" %}
 {% block title %}Crypto Exchanger{% endblock %}
 {% block content %}
+  <div class="card" style="border-color: var(--warn); background: rgba(232,162,61,0.08);">
+    <div style="font-weight: 700; color: var(--warn); margin-bottom: 8px;">⚠ Demo-Version -- keine Lizenz, kein produktiver Betrieb</div>
+    <p style="margin: 0; font-size: 14px;">
+      Diese Anwendung ist ein <strong>funktionsfähiges Beispiel</strong> zu Demonstrationszwecken (u. a. gegenüber
+      potenziellen Geschäftspartnern). Der Betreiber verfügt über <strong>keine Erlaubnis/Lizenz</strong> für das
+      Kryptoverwahrgeschäft oder vergleichbare Finanzdienstleistungen. Es werden <strong>keine echten Kundengelder
+      Dritter</strong> entgegengenommen oder verwahrt -- Details siehe <a href="{{ url_for('legal_ui.agb') }}">AGB</a>.
+    </p>
+  </div>
+
   <div class="card" style="text-align: center;">
-    <p>Deposit, swap, and withdraw crypto from your own account balance.</p>
-    <form method="get" action="{{ url_for('account_ui.register') }}"><button type="submit">Create account</button></form>
-    <form method="get" action="{{ url_for('account_ui.login') }}"><button type="submit" class="secondary">Log in</button></form>
+    <p>Zahlen Sie ein, tauschen und zahlen Sie Kryptowährungen von Ihrem eigenen Kontoguthaben aus.</p>
+    <form method="get" action="{{ url_for('account_ui.register') }}"><button type="submit">Konto erstellen</button></form>
+    <form method="get" action="{{ url_for('account_ui.login') }}"><button type="submit" class="secondary">Anmelden</button></form>
   </div>
 {% endblock %}

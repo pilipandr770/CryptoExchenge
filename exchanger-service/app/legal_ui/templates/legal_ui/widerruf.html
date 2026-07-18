@@ -1,0 +1,18 @@
+{% extends "legal_ui/base.html" %}
+{% block title %}Widerrufsbelehrung{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="notice">Da es sich bei dieser Anwendung um eine nicht-produktive Demoversion handelt, werden keine entgeltlichen Verträge geschlossen und kein echtes Kryptoverwahrgeschäft betrieben. Ein Widerrufsrecht nach § 355 BGB kommt daher praktisch nicht zur Anwendung. Nachfolgend eine Musterbelehrung, wie sie in einer produktiven Version für Finanzdienstleistungen im Fernabsatz vorgesehen wäre -- zu Demonstrationszwecken.</div>
+
+    <h2>Muster-Widerrufsbelehrung (Beispiel)</h2>
+
+    <h3>Widerrufsrecht</h3>
+    <p>Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen den Vertrag zu widerrufen. Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsschlusses.</p>
+
+    <h3>Ausübung des Widerrufsrechts</h3>
+    <p>Um Ihr Widerrufsrecht auszuüben, müssen Sie den Betreiber (siehe <a href="{{ url_for('legal_ui.impressum') }}">Impressum</a>) mittels einer eindeutigen Erklärung (z. B. per E-Mail an <a href="mailto:info@andrii-it.de">info@andrii-it.de</a>) über Ihren Entschluss, den Vertrag zu widerrufen, informieren.</p>
+
+    <h3>Folgen des Widerrufs</h3>
+    <p>Im Falle eines wirksamen Widerrufs werden bereits erbrachte Leistungen rückabgewickelt, soweit dies möglich ist. Da diese Demo keine echten Vermögenswerte Dritter entgegennimmt, hat dieser Abschnitt in der aktuellen Version ausschließlich beispielhaften Charakter.</p>
+  </div>
+{% endblock %}

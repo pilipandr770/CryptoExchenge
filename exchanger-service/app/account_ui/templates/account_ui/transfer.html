@@ -1,29 +1,29 @@
 {% extends "account_ui/base.html" %}
-{% block title %}Transfer{% endblock %}
+{% block title %}Überweisung{% endblock %}
 {% block content %}
   <div class="card">
-    <h2>Your balances</h2>
+    <h2>Ihr Guthaben</h2>
     <table>
       <tbody>
         {% for asset, amount in balances.items() %}
         <tr><td>{{ asset }}</td><td>{{ amount }}</td></tr>
         {% else %}
-        <tr><td class="muted">No balance yet.</td></tr>
+        <tr><td class="muted">Noch kein Guthaben.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
   <div class="card">
-    <h2>Transfer to another user</h2>
+    <h2>An einen anderen Nutzer überweisen</h2>
     <form method="post">
-      <label for="recipient_email">Recipient email</label>
+      <label for="recipient_email">E-Mail des Empfängers</label>
       <input type="email" id="recipient_email" name="recipient_email" required>
       <label for="asset">Asset</label>
       <input type="text" id="asset" name="asset" placeholder="USDC" required>
-      <label for="amount">Amount</label>
+      <label for="amount">Betrag</label>
       <input type="number" step="0.00000001" id="amount" name="amount" required>
-      <button type="submit">Send</button>
+      <button type="submit">Senden</button>
     </form>
   </div>
 {% endblock %}

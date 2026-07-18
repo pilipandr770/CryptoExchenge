@@ -1,0 +1,30 @@
+{% extends "legal_ui/base.html" %}
+{% block title %}Datenschutzerklärung{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="notice">Diese Anwendung ist eine nicht-produktive Demoversion. Diese Datenschutzerklärung beschreibt, welche Daten die Demo technisch verarbeitet -- es werden keine echten Kundendaten im Produktivbetrieb verarbeitet.</div>
+
+    <h2>Datenschutzerklärung</h2>
+
+    <h3>1. Verantwortlicher</h3>
+    <p>Andrii Pylypchuk, Bergmannweg 16, 65934 Frankfurt am Main, Deutschland -- E-Mail: <a href="mailto:info@andrii-it.de">info@andrii-it.de</a> (siehe <a href="{{ url_for('legal_ui.impressum') }}">Impressum</a>).</p>
+
+    <h3>2. Welche Daten werden verarbeitet</h3>
+    <p>Bei der Registrierung eines Kontos werden folgende Daten erhoben: E-Mail-Adresse, Passwort (nur als gesalzener Hash gespeichert, nie im Klartext), vollständiger Name, optional Geburtsdatum und Land. Name, Geburtsdatum und Land werden einmalig für eine automatisierte Sanktionslisten-Prüfung (Anti-Geldwäsche-/KYC-Prüfung) verwendet und danach nicht erneut abgefragt. Bei aktivierter Zwei-Faktor-Authentifizierung wird zusätzlich ein TOTP-Geheimnis verschlüsselt gespeichert. Kontostände, Ein-/Auszahlungen, Tauschvorgänge und Überweisungen werden zur Kontoführung in einer Buchhaltungs-Datenbank (Ledger) gespeichert.</p>
+
+    <h3>3. Zweck und Rechtsgrundlage der Verarbeitung</h3>
+    <p>Die Verarbeitung erfolgt zur Erfüllung des Nutzungsvertrags (Art. 6 Abs. 1 lit. b DSGVO) sowie zur Erfüllung rechtlicher Sorgfaltspflichten im Bereich Geldwäscheprävention (Art. 6 Abs. 1 lit. c DSGVO) bzw. aufgrund berechtigten Interesses an Betrugs- und Missbrauchsprävention (Art. 6 Abs. 1 lit. f DSGVO).</p>
+
+    <h3>4. Weitergabe an Dritte</h3>
+    <p>Zur Sanktionslisten-Prüfung wird Name, Geburtsdatum und Land an einen internen Compliance-Dienst (AML-18-Screening) übermittelt. Eine Weitergabe an sonstige Dritte findet nicht statt.</p>
+
+    <h3>5. Speicherdauer</h3>
+    <p>Daten werden gespeichert, solange das Konto besteht, sowie darüber hinaus, soweit gesetzliche Aufbewahrungspflichten dies erfordern.</p>
+
+    <h3>6. Cookies</h3>
+    <p>Diese Anwendung verwendet ausschließlich ein technisch notwendiges Sitzungs-Cookie (Login-Status) sowie ein Cookie zur Speicherung Ihrer Zustimmung zum Cookie-Hinweis. Es werden keine Tracking-, Analyse- oder Werbe-Cookies eingesetzt und keine Daten an Dritte zu Marketingzwecken weitergegeben.</p>
+
+    <h3>7. Ihre Rechte</h3>
+    <p>Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer Daten sowie auf Datenübertragbarkeit und Widerspruch (Art. 15-21 DSGVO). Wenden Sie sich hierzu an <a href="mailto:info@andrii-it.de">info@andrii-it.de</a>. Ihnen steht außerdem ein Beschwerderecht bei einer Datenschutzaufsichtsbehörde zu.</p>
+  </div>
+{% endblock %}

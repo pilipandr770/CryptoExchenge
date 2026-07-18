@@ -1,17 +1,17 @@
 {% extends "admin_ui/base.html" %}
-{% block title %}Users - Exchanger Admin{% endblock %}
+{% block title %}Nutzer - Exchanger Admin{% endblock %}
 {% block content %}
   <div class="panel">
     <table>
       <thead>
         <tr>
           <th>ID</th>
-          <th>Email</th>
-          <th>Full name</th>
-          <th>Screening</th>
-          <th>Active</th>
+          <th>E-Mail</th>
+          <th>Vollständiger Name</th>
+          <th>Prüfung</th>
+          <th>Aktiv</th>
           <th>2FA</th>
-          <th>Created</th>
+          <th>Erstellt</th>
         </tr>
       </thead>
       <tbody>
@@ -21,12 +21,12 @@
           <td>{{ u.email }}</td>
           <td>{{ u.full_name }}</td>
           <td><span class="badge">{{ u.screening_decision or '—' }}</span></td>
-          <td>{{ 'yes' if u.is_active else 'no' }}</td>
-          <td>{{ 'yes' if u.totp_enabled else 'no' }}</td>
+          <td>{{ 'ja' if u.is_active else 'nein' }}</td>
+          <td>{{ 'ja' if u.totp_enabled else 'nein' }}</td>
           <td class="muted">{{ u.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="7" class="muted">No registered users yet.</td></tr>
+        <tr><td colspan="7" class="muted">Noch keine registrierten Nutzer.</td></tr>
         {% endfor %}
       </tbody>
     </table>

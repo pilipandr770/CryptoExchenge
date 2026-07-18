@@ -1,10 +1,10 @@
 {% extends "admin_ui/base.html" %}
-{% block title %}Ledger reconciliation - Exchanger Admin{% endblock %}
+{% block title %}Ledger-Abgleich - Exchanger Admin{% endblock %}
 {% block content %}
   <div class="panel">
-    <h2>On-chain vs internal ledger</h2>
+    <h2>On-Chain vs. internes Ledger</h2>
     <table>
-      <thead><tr><th>Account</th><th>Asset</th><th>Ledger</th><th>On-chain</th><th>Difference</th><th>Status</th></tr></thead>
+      <thead><tr><th>Konto</th><th>Asset</th><th>Ledger</th><th>On-Chain</th><th>Differenz</th><th>Status</th></tr></thead>
       <tbody>
         {% for r in results %}
         <tr>
@@ -13,10 +13,10 @@
           <td>{{ r.ledger_balance }}</td>
           <td>{{ r.onchain_balance }}</td>
           <td>{{ r.difference }}</td>
-          <td><span class="badge {{ 'ok' if r.ok else 'bad' }}">{{ 'OK' if r.ok else 'MISMATCH' }}</span></td>
+          <td><span class="badge {{ 'ok' if r.ok else 'bad' }}">{{ 'OK' if r.ok else 'ABWEICHUNG' }}</span></td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="muted">No on-chain balances could be fetched -- configure EVM_RPC_URL / BTC_ESPLORA_API_BASE_URL.</td></tr>
+        <tr><td colspan="6" class="muted">Es konnten keine On-Chain-Guthaben abgerufen werden -- EVM_RPC_URL / BTC_ESPLORA_API_BASE_URL konfigurieren.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -24,7 +24,7 @@
 
   {% if fetch_errors %}
   <div class="panel">
-    <h2>Fetch errors</h2>
+    <h2>Abruffehler</h2>
     <ul>
       {% for err in fetch_errors %}<li class="muted">{{ err }}</li>{% endfor %}
     </ul>
@@ -33,10 +33,10 @@
 
   {% if ledger_only %}
   <div class="panel">
-    <h2>Ledger-only balances (no on-chain check in this MVP)</h2>
-    <p class="muted">ERC-20 balances (WBTC, USDC, ...) aren't fetched on-chain by this page yet -- shown as recorded in the internal ledger only.</p>
+    <h2>Nur im Ledger vorhandene Guthaben (in diesem MVP kein On-Chain-Abgleich)</h2>
+    <p class="muted">ERC-20-Guthaben (WBTC, USDC, ...) werden von dieser Seite noch nicht on-chain abgerufen -- hier nur wie im internen Ledger erfasst.</p>
     <table>
-      <thead><tr><th>Account</th><th>Asset</th><th>Balance</th></tr></thead>
+      <thead><tr><th>Konto</th><th>Asset</th><th>Guthaben</th></tr></thead>
       <tbody>
         {% for row in ledger_only %}
         <tr><td><code>{{ row.account }}</code></td><td>{{ row.asset }}</td><td>{{ row.balance }}</td></tr>

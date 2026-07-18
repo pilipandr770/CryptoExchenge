@@ -1,21 +1,21 @@
 {% extends "account_ui/base.html" %}
-{% block title %}Withdraw{% endblock %}
+{% block title %}Auszahlung{% endblock %}
 {% block content %}
   <div class="card">
-    <h2>Your balances</h2>
+    <h2>Ihr Guthaben</h2>
     <table>
       <tbody>
         {% for asset, amount in balances.items() %}
         <tr><td>{{ asset }}</td><td>{{ amount }}</td></tr>
         {% else %}
-        <tr><td class="muted">No balance yet.</td></tr>
+        <tr><td class="muted">Noch kein Guthaben.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
   <div class="card">
-    <h2>Withdraw</h2>
+    <h2>Auszahlung</h2>
     <form method="post">
       <label for="chain">Chain</label>
       <select id="chain" name="chain" required>
@@ -23,13 +23,13 @@
       </select>
       <label for="asset">Asset</label>
       <input type="text" id="asset" name="asset" placeholder="ETH" required>
-      <label for="amount">Amount</label>
+      <label for="amount">Betrag</label>
       <input type="number" step="0.00000001" id="amount" name="amount" required>
-      <label for="withdrawal_address">Destination address</label>
+      <label for="withdrawal_address">Zieladresse</label>
       <input type="text" id="withdrawal_address" name="withdrawal_address" required>
-      <label for="transfer_amount_eur">EUR-equivalent value (for the compliance threshold check)</label>
+      <label for="transfer_amount_eur">EUR-Gegenwert (für die Prüfung des Compliance-Schwellenwerts)</label>
       <input type="number" step="0.01" id="transfer_amount_eur" name="transfer_amount_eur" required>
-      <button type="submit">Withdraw</button>
+      <button type="submit">Auszahlen</button>
     </form>
   </div>
 {% endblock %}

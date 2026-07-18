@@ -1,0 +1,32 @@
+{% extends "legal_ui/base.html" %}
+{% block title %}Nutzungsbedingungen (AGB){% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="notice">
+      <strong>Wichtiger Hinweis:</strong> Dies ist eine nicht-produktive Demo-/Beispielanwendung zu Präsentationszwecken (u. a. gegenüber potenziellen Geschäftspartnern). Der Betreiber verfügt über <strong>keine Erlaubnis/Lizenz</strong> nach § 32 KWG (Kryptoverwahrgeschäft) oder vergleichbaren finanzaufsichtsrechtlichen Vorschriften. Es werden <strong>keine echten Kundengelder Dritter entgegengenommen oder verwahrt</strong>; die Anwendung dient ausschließlich Test- und Demonstrationszwecken des Betreibers.
+    </div>
+
+    <h2>Nutzungsbedingungen (AGB)</h2>
+
+    <h3>1. Geltungsbereich</h3>
+    <p>Diese Nutzungsbedingungen gelten für die Nutzung dieser Demo-Anwendung ("Anwendung"), betrieben von Andrii Pylypchuk (siehe <a href="{{ url_for('legal_ui.impressum') }}">Impressum</a>).</p>
+
+    <h3>2. Leistungsbeschreibung</h3>
+    <p>Die Anwendung demonstriert den Arbeitsablauf einer Krypto-Wechselstube: Registrierung, Zwei-Faktor-Authentifizierung, Einzahlung, Tausch, Auszahlung und Überweisung zwischen Konten. Es handelt sich um eine funktionsfähige Beispielimplementierung, nicht um ein reguliertes, öffentlich zugängliches Finanzprodukt.</p>
+
+    <h3>3. Keine Gewährleistung, Haftungsausschluss</h3>
+    <p>Die Anwendung wird "wie besehen" ohne jegliche Gewährleistung für Verfügbarkeit, Richtigkeit oder Eignung für einen bestimmten Zweck bereitgestellt. Der Betreiber haftet nicht für Vermögensschäden, die aus der Nutzung der Demo-Anwendung entstehen, soweit gesetzlich zulässig.</p>
+
+    <h3>4. Nutzerpflichten</h3>
+    <p>Nutzer verpflichten sich, bei der Registrierung wahrheitsgemäße Angaben zu machen und die Anwendung nicht zur Verarbeitung echter Kundengelder Dritter einzusetzen.</p>
+
+    <h3>5. Kontobeendigung</h3>
+    <p>Der Betreiber kann Konten jederzeit ohne Angabe von Gründen sperren oder löschen, insbesondere im Rahmen von Tests.</p>
+
+    <h3>6. Änderungen dieser Bedingungen</h3>
+    <p>Der Betreiber kann diese Bedingungen jederzeit anpassen; die jeweils aktuelle Fassung ist auf dieser Seite abrufbar.</p>
+
+    <h3>7. Anwendbares Recht, Gerichtsstand</h3>
+    <p>Es gilt deutsches Recht. Gerichtsstand ist, soweit gesetzlich zulässig, Frankfurt am Main.</p>
+  </div>
+{% endblock %}

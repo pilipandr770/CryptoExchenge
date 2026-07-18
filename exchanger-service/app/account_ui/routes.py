@@ -146,13 +146,13 @@ def register():
     country = (request.form.get("country") or "").strip() or None
 
     if not email or not password or not full_name:
-        flash("Email, password, and full name are required.", "error")
+        flash("E-Mail, Passwort und vollständiger Name sind erforderlich.", "error")
         return render_template("account_ui/register.html"), 400
 
     try:
         user = auth.register_user(email, password, full_name, date_of_birth=date_of_birth, country=country)
-    except auth.RegistrationError as exc:
-        flash(str(exc), "error")
+    except auth.RegistrationError:
+        flash("Für diese E-Mail-Adresse existiert bereits ein Konto.", "error")
         return render_template("account_ui/register.html"), 400
 
     try:
@@ -187,7 +187,7 @@ def setup_2fa():
     secret = session.get("pending_totp_secret")
     code = request.form.get("code") or ""
     if not secret or not auth.verify_totp_code(secret, code):
-        flash("Invalid code -- check your authenticator app and try again.", "error")
+        flash("Ungültiger Code -- bitte in der Authenticator-App prüfen und erneut versuchen.", "error")
         qr_data_uri = _qr_data_uri(auth.provisioning_uri(secret or auth.generate_totp_secret(), user.email))
         return render_template("account_ui/setup_2fa.html", secret=secret, qr_data_uri=qr_data_uri), 400
 
@@ -198,9 +198,9 @@ def setup_2fa():
     session["user_id"] = user.id
 
     if user.is_active:
-        flash("Two-factor authentication enabled. Welcome!", "success")
+        flash("Zwei-Faktor-Authentifizierung aktiviert. Willkommen!", "success")
     else:
-        flash("Account created, but pending manual review before you can deposit or trade.", "success")
+        flash("Konto erstellt, wartet aber auf manuelle Prüfung, bevor Sie einzahlen oder handeln können.", "success")
     return redirect(url_for("account_ui.dashboard"))
 
 
@@ -213,7 +213,7 @@ def login():
 
     user = auth.authenticate(request.form.get("email") or "", request.form.get("password") or "")
     if user is None:
-        flash("Invalid email or password.", "error")
+        flash("E-Mail oder Passwort ungültig.", "error")
         return render_template("account_ui/login.html"), 401
 
     if not user.totp_enabled:
@@ -240,11 +240,11 @@ def verify_login_2fa():
         secret = auth.get_totp_secret(user)
     except KeyManagementError as exc:
         logger.error("could not load TOTP secret for user %s: %s", user.id, exc)
-        flash("Could not verify your code right now -- please try again.", "error")
+        flash("Ihr Code konnte gerade nicht geprüft werden -- bitte versuchen Sie es erneut.", "error")
         return render_template("account_ui/verify_2fa.html"), 500
 
     if not auth.verify_totp_code(secret, request.form.get("code") or ""):
-        flash("Invalid code.", "error")
+        flash("Ungültiger Code.", "error")
         return render_template("account_ui/verify_2fa.html"), 401
 
     session.pop("pending_login_user_id", None)
@@ -280,14 +280,14 @@ def deposit():
 
     chain = (request.form.get("chain") or "").strip()
     if chain not in SUPPORTED_CHAINS:
-        flash(f"Unsupported chain (must be one of {', '.join(SUPPORTED_CHAINS)}).", "error")
+        flash(f"Nicht unterstützte Chain (muss eine von {', '.join(SUPPORTED_CHAINS)} sein).", "error")
         return render_template("account_ui/deposit.html", chains=SUPPORTED_CHAINS, address=None), 400
 
     try:
         deposit_address = get_or_create_deposit_address(user, chain)
     except KeyManagementError as exc:
         logger.error("deposit address derivation failed: %s", exc)
-        flash("Deposits aren't available right now -- please try again later.", "error")
+        flash("Einzahlungen sind derzeit nicht verfügbar -- bitte versuchen Sie es später erneut.", "error")
         return render_template("account_ui/deposit.html", chains=SUPPORTED_CHAINS, address=None), 503
 
     return render_template(
@@ -314,27 +314,27 @@ def swap_quote():
     from_amount = _decimal_form_field("from_amount")
 
     if not all(form_values.values()) or from_amount is None or from_amount <= 0:
-        flash("All fields are required and the amount must be positive.", "error")
+        flash("Alle Felder sind erforderlich, und der Betrag muss positiv sein.", "error")
         return render_template("account_ui/swap.html", chains=SUPPORTED_CHAINS, balances=balances, form_values=form_values), 400
 
     if form_values["from_chain"] not in SUPPORTED_CHAINS or form_values["to_chain"] not in SUPPORTED_CHAINS:
-        flash(f"Unsupported chain (must be one of {', '.join(SUPPORTED_CHAINS)}).", "error")
+        flash(f"Nicht unterstützte Chain (muss eine von {', '.join(SUPPORTED_CHAINS)} sein).", "error")
         return render_template("account_ui/swap.html", chains=SUPPORTED_CHAINS, balances=balances, form_values=form_values), 400
 
     current_balance = user_balance(user.id, form_values["from_asset"])
     if current_balance < from_amount:
-        flash(f"Insufficient balance: you have {current_balance} {form_values['from_asset']}.", "error")
+        flash(f"Unzureichendes Guthaben: Sie haben {current_balance} {form_values['from_asset']}.", "error")
         return render_template("account_ui/swap.html", chains=SUPPORTED_CHAINS, balances=balances, form_values=form_values), 400
 
     try:
         adapter = liquidity_factory.liquidity_adapter_for(form_values["from_asset"])
         quote = adapter.get_quote(form_values["from_asset"], form_values["to_asset"], from_amount)
     except TreasuryRebalanceRequiredError:
-        flash("This pair is temporarily unavailable -- please try a smaller amount or a different asset.", "error")
+        flash("Dieses Paar ist vorübergehend nicht verfügbar -- bitte versuchen Sie einen kleineren Betrag oder ein anderes Asset.", "error")
         return render_template("account_ui/swap.html", chains=SUPPORTED_CHAINS, balances=balances, form_values=form_values), 400
     except LiquidityAdapterError as exc:
         logger.warning("account swap quote preview failed: %s", exc)
-        flash("Could not get a live rate right now -- please try again in a moment.", "error")
+        flash("Gerade konnte kein aktueller Kurs abgerufen werden -- bitte versuchen Sie es gleich noch einmal.", "error")
         return render_template("account_ui/swap.html", chains=SUPPORTED_CHAINS, balances=balances, form_values=form_values), 400
 
     net_amount = apply_margin(quote.to_amount, current_app.config["MARGIN_PERCENT"])
@@ -352,7 +352,7 @@ def swap_execute():
     from_amount = _decimal_form_field("from_amount")
 
     if not all(form_values.values()) or from_amount is None or from_amount <= 0:
-        flash("All fields are required and the amount must be positive.", "error")
+        flash("Alle Felder sind erforderlich, und der Betrag muss positiv sein.", "error")
         return redirect(url_for("account_ui.swap_form"))
 
     order = SwapOrder(
@@ -367,7 +367,7 @@ def swap_execute():
     try:
         orchestrator.lock_quote_from_balance(order, adapter, current_app.config["MARGIN_PERCENT"], actor=user.email)
     except InsufficientBalanceError as exc:
-        flash(str(exc), "error")
+        flash(f"Unzureichendes Guthaben: Sie haben {exc.available} {exc.asset}, benötigt werden {exc.requested} {exc.asset}.", "error")
         return redirect(url_for("account_ui.swap_form"))
 
     if order.status == states.QUOTE_LOCKED:
@@ -399,24 +399,24 @@ def withdraw_create():
     transfer_amount_eur = request.form.get("transfer_amount_eur", type=float)
 
     if not chain or not asset or amount is None or amount <= 0 or not withdrawal_address or transfer_amount_eur is None:
-        flash("All fields (including the EUR-equivalent value for the compliance threshold check) are required.", "error")
+        flash("Alle Felder (einschließlich des EUR-Gegenwerts für die Prüfung des Compliance-Schwellenwerts) sind erforderlich.", "error")
         return render_template("account_ui/withdraw.html", chains=SUPPORTED_CHAINS, balances=balances), 400
 
     try:
         order = orchestrator.withdraw_from_balance(user, chain, asset, amount, withdrawal_address, actor=user.email)
     except InsufficientBalanceError as exc:
-        flash(str(exc), "error")
+        flash(f"Unzureichendes Guthaben: Sie haben {exc.available} {exc.asset}, benötigt werden {exc.requested} {exc.asset}.", "error")
         return render_template("account_ui/withdraw.html", chains=SUPPORTED_CHAINS, balances=balances), 400
 
     try:
         orchestrator.gate_withdrawal(order, _aml18_client(), transfer_amount_eur=Decimal(str(transfer_amount_eur)), actor=user.email)
         if order.status == states.WITHDRAWAL_REQUESTED:
             orchestrator.send_withdrawal(order, _send_withdrawal_fn, actor=user.email)
-            flash("Withdrawal sent.", "success")
+            flash("Auszahlung gesendet.", "success")
         else:
-            flash("Wallet-ownership verification required -- sign the challenge shown on the order page.", "success")
+            flash("Verifizierung des Wallet-Eigentums erforderlich -- bitte signieren Sie die auf der Auftragsseite angezeigte Challenge.", "success")
     except (SendError, orchestrator.WithdrawalNotClearedError) as exc:
-        flash(f"Could not process withdrawal: {exc}", "error")
+        flash(f"Auszahlung konnte nicht verarbeitet werden: {exc}", "error")
 
     return redirect(url_for("account_ui.order_detail", order_id=order.id))
 
@@ -439,23 +439,23 @@ def transfer_create():
     amount = _decimal_form_field("amount")
 
     if not recipient_email or not asset or amount is None or amount <= 0:
-        flash("Recipient email, asset, and a positive amount are all required.", "error")
+        flash("Empfänger-E-Mail, Asset und ein positiver Betrag sind erforderlich.", "error")
         return render_template("account_ui/transfer.html", balances=balances), 400
 
     try:
         create_transfer(user, recipient_email, asset, amount)
         db.session.commit()
     except RecipientNotFoundError:
-        flash(f"No account found for {recipient_email!r}.", "error")
+        flash(f"Kein Konto für '{recipient_email}' gefunden.", "error")
         return render_template("account_ui/transfer.html", balances=balances), 400
     except SameAccountTransferError:
-        flash("You can't transfer to your own account.", "error")
+        flash("Sie können nicht auf Ihr eigenes Konto überweisen.", "error")
         return render_template("account_ui/transfer.html", balances=balances), 400
     except InsufficientBalanceError as exc:
-        flash(str(exc), "error")
+        flash(f"Unzureichendes Guthaben: Sie haben {exc.available} {exc.asset}, benötigt werden {exc.requested} {exc.asset}.", "error")
         return render_template("account_ui/transfer.html", balances=balances), 400
 
-    flash(f"Sent {amount} {asset} to {recipient_email}.", "success")
+    flash(f"{amount} {asset} an {recipient_email} gesendet.", "success")
     return redirect(url_for("account_ui.dashboard"))
 
 
@@ -477,7 +477,7 @@ def order_detail(order_id):
     user = auth.current_user()
     order = SwapOrder.query.filter_by(id=order_id, user_id=user.id).first()
     if order is None:
-        flash("Order not found.", "error")
+        flash("Auftrag nicht gefunden.", "error")
         return redirect(url_for("account_ui.orders_list"))
 
     if order.funding_source == "account_balance" and order.status == states.SWAP_EXECUTING:
@@ -495,25 +495,25 @@ def submit_verification(order_id):
     user = auth.current_user()
     order = SwapOrder.query.filter_by(id=order_id, user_id=user.id).first()
     if order is None:
-        flash("Order not found.", "error")
+        flash("Auftrag nicht gefunden.", "error")
         return redirect(url_for("account_ui.orders_list"))
 
     signature = (request.form.get("signature") or "").strip()
     transfer_amount_eur = request.form.get("transfer_amount_eur", type=float)
     if not signature:
-        flash("Signature is required.", "error")
+        flash("Signatur ist erforderlich.", "error")
         return redirect(url_for("account_ui.order_detail", order_id=order_id))
 
     try:
         submit_withdrawal_verification(order, _aml18_client(), signature, transfer_amount_eur=transfer_amount_eur)
         db.session.commit()
         orchestrator.send_withdrawal(order, _send_withdrawal_fn, actor=user.email)
-        flash("Wallet ownership verified and withdrawal sent.", "success")
+        flash("Wallet-Eigentum verifiziert und Auszahlung gesendet.", "success")
     except WalletOwnershipVerificationFailedError as exc:
         db.session.commit()
-        flash(f"Verification failed: {exc}", "error")
+        flash(f"Verifizierung fehlgeschlagen: {exc}", "error")
     except (SendError, orchestrator.WithdrawalNotClearedError) as exc:
-        flash(f"Verification succeeded but sending failed: {exc}", "error")
+        flash(f"Verifizierung erfolgreich, aber Senden fehlgeschlagen: {exc}", "error")
 
     return redirect(url_for("account_ui.order_detail", order_id=order_id))
 
@@ -524,7 +524,7 @@ def poll_withdrawal(order_id):
     user = auth.current_user()
     order = SwapOrder.query.filter_by(id=order_id, user_id=user.id).first()
     if order is None:
-        flash("Order not found.", "error")
+        flash("Auftrag nicht gefunden.", "error")
         return redirect(url_for("account_ui.orders_list"))
 
     cfg = current_app.config

@@ -60,11 +60,11 @@ def login():
     expected_password = current_app.config["ADMIN_PASSWORD"]
 
     if not expected_password:
-        flash("ADMIN_PASSWORD is not configured -- set it in .env before logging in.", "error")
+        flash("ADMIN_PASSWORD ist nicht konfiguriert -- bitte vor der Anmeldung in .env setzen.", "error")
         return render_template("admin_ui/login.html"), 400
 
     if username != current_app.config["ADMIN_USERNAME"] or password != expected_password:
-        flash("Invalid username or password.", "error")
+        flash("Benutzername oder Passwort ungültig.", "error")
         return render_template("admin_ui/login.html"), 401
 
     session["admin_logged_in"] = True
@@ -179,17 +179,17 @@ def create_order():
     operator = session.get("admin_username", current_app.config["ADMIN_USERNAME"])
 
     if not all([from_chain, from_asset, from_amount, to_chain, to_asset, label]):
-        flash("Label, deposit chain/asset/amount, and swap-to chain/asset are all required.", "error")
+        flash("Bezeichnung, Einzahlungs-Chain/-Asset/-Betrag und Ziel-Chain/-Asset sind alle erforderlich.", "error")
         return redirect(url_for("admin_ui.new_order_form"))
 
     if from_chain not in SUPPORTED_CHAINS or to_chain not in SUPPORTED_CHAINS:
-        flash(f"Unsupported chain (must be one of {', '.join(SUPPORTED_CHAINS)}).", "error")
+        flash(f"Nicht unterstützte Chain (muss eine von {', '.join(SUPPORTED_CHAINS)} sein).", "error")
         return redirect(url_for("admin_ui.new_order_form"))
 
     try:
         mnemonic = _load_mnemonic()
     except key_management.KeyManagementError as exc:
-        flash(f"Could not load the hot wallet mnemonic: {exc}", "error")
+        flash(f"Die Hot-Wallet-Mnemonic konnte nicht geladen werden: {exc}", "error")
         return redirect(url_for("admin_ui.new_order_form"))
 
     existing_max_index = (
@@ -227,7 +227,7 @@ def create_order():
     })
     db.session.commit()
 
-    flash(f"Order #{order.id} created. Send the deposit to: {address}", "success")
+    flash(f"Auftrag #{order.id} erstellt. Einzahlung senden an: {address}", "success")
     return redirect(url_for("admin_ui.order_detail", order_id=order.id))
 
 
@@ -277,12 +277,12 @@ def order_detail(order_id):
 def run_screening(order_id):
     order = db.session.get(SwapOrder, order_id)
     if order is None:
-        flash("Order not found.", "error")
+        flash("Auftrag nicht gefunden.", "error")
         return redirect(url_for("admin_ui.list_orders"))
 
     client_name = (request.form.get("client_name") or order.client_name or "").strip()
     if not client_name:
-        flash("A client name is required to run the sanctions screening check.", "error")
+        flash("Ein Kundenname ist für die Sanktionsprüfung erforderlich.", "error")
         return redirect(url_for("admin_ui.order_detail", order_id=order_id))
 
     operator = session.get("admin_username", current_app.config["ADMIN_USERNAME"])
@@ -295,12 +295,12 @@ def run_screening(order_id):
             actor=operator,
         )
         if order.status == states.QUOTE_LOCKED:
-            flash(f"Order {order_id} screened and quote locked.", "success")
+            flash(f"Auftrag {order_id} geprüft und Kurs gesperrt.", "success")
         elif order.status == states.PENDING_MANUAL_REVIEW:
-            flash(f"Order {order_id} flagged for manual review (decision: {order.screening_decision}).", "success")
+            flash(f"Auftrag {order_id} zur manuellen Prüfung markiert (Entscheidung: {order.screening_decision}).", "success")
     except (states.InvalidTransitionError, LiquidityAdapterError) as exc:
         db.session.rollback()
-        flash(f"Could not screen order {order_id}: {exc}", "error")
+        flash(f"Auftrag {order_id} konnte nicht geprüft werden: {exc}", "error")
 
     return redirect(url_for("admin_ui.order_detail", order_id=order_id))
 
@@ -310,16 +310,16 @@ def run_screening(order_id):
 def approve_review(order_id):
     order = db.session.get(SwapOrder, order_id)
     if order is None:
-        flash("Order not found.", "error")
+        flash("Auftrag nicht gefunden.", "error")
         return redirect(url_for("admin_ui.list_orders"))
 
     operator = session.get("admin_username", current_app.config["ADMIN_USERNAME"])
     try:
         orchestrator.approve_manual_review(order, operator=operator)
         orchestrator.lock_quote(order, _liquidity_adapter_for(order), current_app.config["MARGIN_PERCENT"], actor=operator)
-        flash(f"Order {order_id} approved and quote locked.", "success")
+        flash(f"Auftrag {order_id} genehmigt und Kurs gesperrt.", "success")
     except (states.InvalidTransitionError, LiquidityAdapterError) as exc:
-        flash(f"Could not approve order {order_id}: {exc}", "error")
+        flash(f"Auftrag {order_id} konnte nicht genehmigt werden: {exc}", "error")
 
     return redirect(url_for("admin_ui.order_detail", order_id=order_id))
 
@@ -329,7 +329,7 @@ def approve_review(order_id):
 def trigger_execute_swap(order_id):
     order = db.session.get(SwapOrder, order_id)
     if order is None:
-        flash("Order not found.", "error")
+        flash("Auftrag nicht gefunden.", "error")
         return redirect(url_for("admin_ui.list_orders"))
 
     orchestrator.execute_swap(order, _liquidity_adapter_for(order))
@@ -342,15 +342,15 @@ def trigger_execute_swap(order_id):
 def retry_rebalance(order_id):
     order = db.session.get(SwapOrder, order_id)
     if order is None:
-        flash("Order not found.", "error")
+        flash("Auftrag nicht gefunden.", "error")
         return redirect(url_for("admin_ui.list_orders"))
 
     operator = session.get("admin_username", current_app.config["ADMIN_USERNAME"])
     try:
         orchestrator.retry_after_rebalance(order, _liquidity_adapter_for(order), operator=operator)
-        flash(f"Order {order_id} resumed after treasury rebalance.", "success")
+        flash(f"Auftrag {order_id} nach Treasury-Rebalance fortgesetzt.", "success")
     except (states.InvalidTransitionError, TreasuryRebalanceRequiredError) as exc:
-        flash(f"Could not resume order {order_id}: {exc}", "error")
+        flash(f"Auftrag {order_id} konnte nicht fortgesetzt werden: {exc}", "error")
 
     return redirect(url_for("admin_ui.order_detail", order_id=order_id))
 
@@ -360,7 +360,7 @@ def retry_rebalance(order_id):
 def request_withdrawal(order_id):
     order = db.session.get(SwapOrder, order_id)
     if order is None:
-        flash("Order not found.", "error")
+        flash("Auftrag nicht gefunden.", "error")
         return redirect(url_for("admin_ui.list_orders"))
 
     # Public orders (app/public_ui) already collected the client's own
@@ -372,7 +372,7 @@ def request_withdrawal(order_id):
     operator = session.get("admin_username", current_app.config["ADMIN_USERNAME"])
 
     if not withdrawal_address or transfer_amount_eur is None:
-        flash("Withdrawal address and EUR-equivalent amount are both required.", "error")
+        flash("Auszahlungsadresse und EUR-Gegenwert sind beide erforderlich.", "error")
         return redirect(url_for("admin_ui.order_detail", order_id=order_id))
 
     try:
@@ -381,11 +381,11 @@ def request_withdrawal(order_id):
         if order.status == states.WITHDRAWAL_REQUESTED:
             # Gate said verification wasn't required -- safe to send now.
             orchestrator.send_withdrawal(order, _send_withdrawal_fn, actor=operator)
-            flash(f"Withdrawal sent for order {order_id}.", "success")
+            flash(f"Auszahlung für Auftrag {order_id} gesendet.", "success")
         else:
-            flash(f"Wallet-ownership verification required for order {order_id} -- sign the challenge and submit it below.", "success")
+            flash(f"Verifizierung des Wallet-Eigentums für Auftrag {order_id} erforderlich -- bitte Challenge signieren und unten absenden.", "success")
     except (states.InvalidTransitionError, SendError, orchestrator.WithdrawalNotClearedError) as exc:
-        flash(f"Could not process withdrawal for order {order_id}: {exc}", "error")
+        flash(f"Auszahlung für Auftrag {order_id} konnte nicht verarbeitet werden: {exc}", "error")
 
     return redirect(url_for("admin_ui.order_detail", order_id=order_id))
 
@@ -395,7 +395,7 @@ def request_withdrawal(order_id):
 def submit_verification(order_id):
     order = db.session.get(SwapOrder, order_id)
     if order is None:
-        flash("Order not found.", "error")
+        flash("Auftrag nicht gefunden.", "error")
         return redirect(url_for("admin_ui.list_orders"))
 
     signature = (request.form.get("signature") or "").strip()
@@ -403,19 +403,19 @@ def submit_verification(order_id):
     operator = session.get("admin_username", current_app.config["ADMIN_USERNAME"])
 
     if not signature:
-        flash("Signature is required.", "error")
+        flash("Signatur ist erforderlich.", "error")
         return redirect(url_for("admin_ui.order_detail", order_id=order_id))
 
     try:
         submit_withdrawal_verification(order, _aml18_client(), signature, transfer_amount_eur=transfer_amount_eur)
         db.session.commit()
         orchestrator.send_withdrawal(order, _send_withdrawal_fn, actor=operator)
-        flash(f"Wallet ownership verified and withdrawal sent for order {order_id}.", "success")
+        flash(f"Wallet-Eigentum verifiziert und Auszahlung für Auftrag {order_id} gesendet.", "success")
     except WalletOwnershipVerificationFailedError as exc:
         db.session.commit()
-        flash(f"Verification failed for order {order_id}: {exc}", "error")
+        flash(f"Verifizierung für Auftrag {order_id} fehlgeschlagen: {exc}", "error")
     except (SendError, orchestrator.WithdrawalNotClearedError) as exc:
-        flash(f"Verification succeeded but sending failed for order {order_id}: {exc}", "error")
+        flash(f"Verifizierung erfolgreich, aber Senden für Auftrag {order_id} fehlgeschlagen: {exc}", "error")
 
     return redirect(url_for("admin_ui.order_detail", order_id=order_id))
 
@@ -425,7 +425,7 @@ def submit_verification(order_id):
 def poll_withdrawal(order_id):
     order = db.session.get(SwapOrder, order_id)
     if order is None:
-        flash("Order not found.", "error")
+        flash("Auftrag nicht gefunden.", "error")
         return redirect(url_for("admin_ui.list_orders"))
 
     cfg = current_app.config
@@ -477,7 +477,7 @@ def treasury_rebalance():
     operator = session.get("admin_username", current_app.config["ADMIN_USERNAME"])
 
     if not btc_amount or not wbtc_amount:
-        flash("Both BTC and WBTC amounts are required to record a rebalance.", "error")
+        flash("BTC- und WBTC-Betrag sind beide erforderlich, um einen Rebalance zu erfassen.", "error")
         return redirect(url_for("admin_ui.treasury"))
 
     from app.ledger.models import LedgerEntry
@@ -489,7 +489,7 @@ def treasury_rebalance():
     })
     db.session.commit()
 
-    flash(f"Recorded manual rebalance: {btc_amount} BTC -> {wbtc_amount} WBTC.", "success")
+    flash(f"Manueller Rebalance erfasst: {btc_amount} BTC -> {wbtc_amount} WBTC.", "success")
     return redirect(url_for("admin_ui.treasury"))
 
 
@@ -564,7 +564,7 @@ def users_list():
 def user_detail(user_id):
     user = db.session.get(User, user_id)
     if user is None:
-        flash("User not found.", "error")
+        flash("Nutzer nicht gefunden.", "error")
         return redirect(url_for("admin_ui.users_list"))
 
     balances = all_user_balances(user.id)
@@ -577,7 +577,7 @@ def user_detail(user_id):
 def approve_user(user_id):
     user = db.session.get(User, user_id)
     if user is None:
-        flash("User not found.", "error")
+        flash("Nutzer nicht gefunden.", "error")
         return redirect(url_for("admin_ui.users_list"))
 
     operator = session.get("admin_username", current_app.config["ADMIN_USERNAME"])
@@ -586,7 +586,7 @@ def approve_user(user_id):
     _audit(operator, "user_approved", "User", str(user.id), {"previous_screening_decision": previous_decision})
     db.session.commit()
 
-    flash(f"Account {user.email} approved.", "success")
+    flash(f"Konto {user.email} genehmigt.", "success")
     return redirect(url_for("admin_ui.user_detail", user_id=user_id))
 
 
@@ -595,7 +595,7 @@ def approve_user(user_id):
 def freeze_user(user_id):
     user = db.session.get(User, user_id)
     if user is None:
-        flash("User not found.", "error")
+        flash("Nutzer nicht gefunden.", "error")
         return redirect(url_for("admin_ui.users_list"))
 
     operator = session.get("admin_username", current_app.config["ADMIN_USERNAME"])
@@ -603,5 +603,5 @@ def freeze_user(user_id):
     _audit(operator, "user_frozen", "User", str(user.id), {})
     db.session.commit()
 
-    flash(f"Account {user.email} frozen.", "success")
+    flash(f"Konto {user.email} gesperrt.", "success")
     return redirect(url_for("admin_ui.user_detail", user_id=user_id))

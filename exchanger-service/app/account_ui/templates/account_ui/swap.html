@@ -1,14 +1,14 @@
 {% extends "account_ui/base.html" %}
-{% block title %}Swap{% endblock %}
+{% block title %}Tausch{% endblock %}
 {% block content %}
   <div class="card">
-    <h2>Your balances</h2>
+    <h2>Ihr Guthaben</h2>
     <table>
       <tbody>
         {% for asset, amount in balances.items() %}
         <tr><td>{{ asset }}</td><td>{{ amount }}</td></tr>
         {% else %}
-        <tr><td class="muted">No balance yet.</td></tr>
+        <tr><td class="muted">Noch kein Guthaben.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -16,7 +16,7 @@
 
   <div class="card">
     <form method="post" action="{{ url_for('account_ui.swap_quote') }}">
-      <label for="from_asset">You send</label>
+      <label for="from_asset">Sie senden</label>
       <div class="row">
         <input type="text" id="from_asset" name="from_asset" placeholder="ETH" value="{{ form_values.from_asset if form_values else '' }}" required>
         <select name="from_chain" required>
@@ -25,9 +25,9 @@
           {% endfor %}
         </select>
       </div>
-      <input type="number" step="0.00000001" name="from_amount" placeholder="Amount" value="{{ form_values.from_amount if form_values else '' }}" required style="margin-top: 8px;">
+      <input type="number" step="0.00000001" name="from_amount" placeholder="Betrag" value="{{ form_values.from_amount if form_values else '' }}" required style="margin-top: 8px;">
 
-      <label for="to_asset">You get</label>
+      <label for="to_asset">Sie erhalten</label>
       <div class="row">
         <input type="text" id="to_asset" name="to_asset" placeholder="USDC" value="{{ form_values.to_asset if form_values else '' }}" required>
         <select name="to_chain" required>
@@ -37,14 +37,14 @@
         </select>
       </div>
 
-      <button type="submit">Get rate</button>
+      <button type="submit">Kurs anzeigen</button>
     </form>
   </div>
 
   {% if preview %}
   <div class="card">
     <div class="amount-preview">
-      <div class="muted">You will receive approximately</div>
+      <div class="muted">Sie erhalten voraussichtlich</div>
       <div class="big">{{ preview.to_amount }} {{ form_values.to_asset }}</div>
     </div>
   </div>
@@ -56,7 +56,7 @@
       <input type="hidden" name="from_amount" value="{{ form_values.from_amount }}">
       <input type="hidden" name="to_chain" value="{{ form_values.to_chain }}">
       <input type="hidden" name="to_asset" value="{{ form_values.to_asset }}">
-      <button type="submit">Confirm swap</button>
+      <button type="submit">Tausch bestätigen</button>
     </form>
   </div>
   {% endif %}

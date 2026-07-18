@@ -2,9 +2,9 @@
 {% block title %}Treasury - Exchanger Admin{% endblock %}
 {% block content %}
   <div class="panel">
-    <h2>Hot wallets</h2>
+    <h2>Hot Wallets</h2>
     <table>
-      <thead><tr><th>Chain</th><th>Address</th><th>Cached balance</th><th>Updated</th></tr></thead>
+      <thead><tr><th>Chain</th><th>Adresse</th><th>Zwischengespeichertes Guthaben</th><th>Aktualisiert</th></tr></thead>
       <tbody>
         {% for w in hot_wallets %}
         <tr>
@@ -14,16 +14,16 @@
           <td class="muted">{{ w.updated_at.strftime("%Y-%m-%d %H:%M UTC") }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="4" class="muted">No hot wallets registered yet.</td></tr>
+        <tr><td colspan="4" class="muted">Noch keine Hot Wallets registriert.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
   <div class="panel">
-    <h2>Treasury ledger balances</h2>
+    <h2>Treasury-Ledger-Guthaben</h2>
     <table>
-      <thead><tr><th>Account</th><th>Asset</th><th>Balance</th></tr></thead>
+      <thead><tr><th>Konto</th><th>Asset</th><th>Guthaben</th></tr></thead>
       <tbody>
         {% for row in treasury_balances %}
         <tr>
@@ -32,23 +32,23 @@
           <td>{{ row.balance }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="3" class="muted">No treasury ledger entries yet.</td></tr>
+        <tr><td colspan="3" class="muted">Noch keine Treasury-Ledger-Einträge vorhanden.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
   <div class="panel action-form">
-    <h2>Convert BTC &harr; WBTC (manual, Phase 1)</h2>
-    <p class="muted">Do the actual conversion yourself off-app (e.g. on an exchange), then record it here so the treasury ledger matches reality. See RUNBOOK.md.</p>
+    <h2>BTC &harr; WBTC umwandeln (manuell, Phase 1)</h2>
+    <p class="muted">Führen Sie die eigentliche Umwandlung selbst außerhalb der App durch (z. B. an einer Börse) und erfassen Sie sie anschließend hier, damit das Treasury-Ledger der Realität entspricht. Siehe RUNBOOK.md.</p>
     <form method="post" action="{{ url_for('admin_ui.treasury_rebalance') }}">
-      <label for="btc_amount">BTC sent out of custody</label>
+      <label for="btc_amount">BTC aus der Verwahrung entnommen</label>
       <input type="number" step="0.00000001" id="btc_amount" name="btc_amount" required>
-      <label for="wbtc_amount">WBTC received into treasury</label>
+      <label for="wbtc_amount">WBTC in die Treasury eingegangen</label>
       <input type="number" step="0.00000001" id="wbtc_amount" name="wbtc_amount" required>
-      <label for="note">Note</label>
-      <input type="text" id="note" name="note" placeholder="e.g. converted via Kraken, txid ...">
-      <button type="submit">Record rebalance</button>
+      <label for="note">Notiz</label>
+      <input type="text" id="note" name="note" placeholder="z. B. umgewandelt über Kraken, txid ...">
+      <button type="submit">Rebalance erfassen</button>
     </form>
   </div>
 {% endblock %}

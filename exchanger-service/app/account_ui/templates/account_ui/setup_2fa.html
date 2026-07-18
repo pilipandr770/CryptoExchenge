@@ -1,18 +1,18 @@
 {% extends "account_ui/base.html" %}
-{% block title %}Set up two-factor authentication{% endblock %}
+{% block title %}Zwei-Faktor-Authentifizierung einrichten{% endblock %}
 {% block content %}
   <div class="card" style="text-align: center;">
-    <h2>Set up two-factor authentication</h2>
-    <p class="muted">Scan this with Google Authenticator, Authy, or any TOTP app.</p>
-    <img src="{{ qr_data_uri }}" alt="2FA QR code" style="background: #fff; padding: 12px; border-radius: 8px;">
-    <p class="muted">Or enter this code manually:</p>
+    <h2>Zwei-Faktor-Authentifizierung einrichten</h2>
+    <p class="muted">Scannen Sie dies mit Google Authenticator, Authy oder einer beliebigen TOTP-App.</p>
+    <img src="{{ qr_data_uri }}" alt="2FA-QR-Code" style="background: #fff; padding: 12px; border-radius: 8px;">
+    <p class="muted">Oder geben Sie diesen Code manuell ein:</p>
     <code>{{ secret }}</code>
   </div>
   <div class="card">
     <form method="post">
-      <label for="code">6-digit code from your app</label>
+      <label for="code">6-stelliger Code aus Ihrer App</label>
       <input type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]*" required autofocus>
-      <button type="submit">Confirm and finish setup</button>
+      <button type="submit">Bestätigen und Einrichtung abschließen</button>
     </form>
   </div>
 {% endblock %}

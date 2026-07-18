@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Account{% endblock %}</title>
+  <title>{% block title %}Konto{% endblock %}</title>
   <style>
     :root {
       --bg: #0f1115; --panel: #171a21; --text: #eef0f4; --muted: #9aa2b1;
@@ -66,7 +66,19 @@
     th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
     th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
     a { color: var(--accent); }
-    footer { text-align: center; padding: 20px; font-size: 12px; color: var(--muted); }
+    footer { text-align: center; padding: 20px 20px 90px; font-size: 12px; color: var(--muted); }
+    footer .legal-links a { color: var(--muted); margin: 0 6px; }
+    footer .legal-links a:hover { color: var(--accent); }
+    .cookie-banner {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+      background: var(--panel); border-top: 1px solid var(--border);
+      padding: 14px 20px; display: flex; align-items: center; gap: 16px;
+      flex-wrap: wrap; font-size: 13px; color: var(--muted);
+    }
+    .cookie-banner p { margin: 0; flex: 1 1 320px; }
+    .cookie-banner button {
+      width: auto; margin: 0; padding: 8px 18px; font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -74,15 +86,15 @@
     <h1>Crypto Exchanger</h1>
     {% if session.user_id %}
     <nav>
-      <a href="{{ url_for('account_ui.dashboard') }}">Dashboard</a>
-      <a href="{{ url_for('account_ui.deposit') }}">Deposit</a>
-      <a href="{{ url_for('account_ui.swap_form') }}">Swap</a>
-      <a href="{{ url_for('account_ui.withdraw_form') }}">Withdraw</a>
-      <a href="{{ url_for('account_ui.transfer_form') }}">Transfer</a>
-      <a href="{{ url_for('account_ui.orders_list') }}">Orders</a>
+      <a href="{{ url_for('account_ui.dashboard') }}">Übersicht</a>
+      <a href="{{ url_for('account_ui.deposit') }}">Einzahlung</a>
+      <a href="{{ url_for('account_ui.swap_form') }}">Tausch</a>
+      <a href="{{ url_for('account_ui.withdraw_form') }}">Auszahlung</a>
+      <a href="{{ url_for('account_ui.transfer_form') }}">Überweisung</a>
+      <a href="{{ url_for('account_ui.orders_list') }}">Aufträge</a>
     </nav>
     <div class="spacer"></div>
-    <a href="{{ url_for('account_ui.logout') }}">Log out</a>
+    <a href="{{ url_for('account_ui.logout') }}">Abmelden</a>
     {% endif %}
   </header>
   <main>
@@ -93,6 +105,32 @@
     {% endwith %}
     {% block content %}{% endblock %}
   </main>
-  <footer>Demo build -- personal-funds MVP, not a licensed public exchange.</footer>
+  <footer>
+    <div>Demo-Build -- MVP für den Eigenbedarf, keine lizenzierte öffentliche Wechselstube. Keine echten Kundengelder, kein produktiver Betrieb.</div>
+    <div class="legal-links" style="margin-top: 8px;">
+      <a href="{{ url_for('legal_ui.impressum') }}">Impressum</a>·
+      <a href="{{ url_for('legal_ui.datenschutz') }}">Datenschutz</a>·
+      <a href="{{ url_for('legal_ui.agb') }}">AGB</a>·
+      <a href="{{ url_for('legal_ui.widerruf') }}">Widerruf</a>
+    </div>
+  </footer>
+
+  <div id="cookie-banner" class="cookie-banner" hidden>
+    <p>Diese Demo verwendet ausschließlich technisch notwendige Cookies (Login-Sitzung). Es findet kein Tracking und keine Analyse statt. <a href="{{ url_for('legal_ui.datenschutz') }}">Mehr erfahren</a></p>
+    <button id="cookie-accept" type="button">Verstanden</button>
+  </div>
+  <script>
+    (function () {
+      var KEY = "cookie_notice_ack";
+      var banner = document.getElementById("cookie-banner");
+      var button = document.getElementById("cookie-accept");
+      if (!banner || !button) return;
+      if (!localStorage.getItem(KEY)) banner.hidden = false;
+      button.addEventListener("click", function () {
+        localStorage.setItem(KEY, "1");
+        banner.hidden = true;
+      });
+    })();
+  </script>
 </body>
 </html>

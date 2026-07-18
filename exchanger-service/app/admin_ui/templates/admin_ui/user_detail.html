@@ -1,48 +1,48 @@
 {% extends "admin_ui/base.html" %}
-{% block title %}User #{{ user.id }} - Exchanger Admin{% endblock %}
+{% block title %}Nutzer #{{ user.id }} - Exchanger Admin{% endblock %}
 {% block content %}
   <div class="panel">
-    <h2>{{ user.email }} <span class="badge">{{ 'active' if user.is_active else 'inactive' }}</span></h2>
+    <h2>{{ user.email }} <span class="badge">{{ 'aktiv' if user.is_active else 'inaktiv' }}</span></h2>
     <dl class="kv">
-      <dt>Full name</dt><dd>{{ user.full_name }}</dd>
-      <dt>Date of birth</dt><dd>{{ user.date_of_birth or '—' }}</dd>
-      <dt>Country</dt><dd>{{ user.country or '—' }}</dd>
-      <dt>Screening decision</dt><dd>{{ user.screening_decision or '—' }} (score {{ user.screening_score if user.screening_score is not none else '—' }})</dd>
-      <dt>2FA enabled</dt><dd>{{ 'yes' if user.totp_enabled else 'no' }}</dd>
-      <dt>Created</dt><dd class="muted">{{ user.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</dd>
+      <dt>Vollständiger Name</dt><dd>{{ user.full_name }}</dd>
+      <dt>Geburtsdatum</dt><dd>{{ user.date_of_birth or '—' }}</dd>
+      <dt>Land</dt><dd>{{ user.country or '—' }}</dd>
+      <dt>Prüfungsentscheidung</dt><dd>{{ user.screening_decision or '—' }} (Score {{ user.screening_score if user.screening_score is not none else '—' }})</dd>
+      <dt>2FA aktiviert</dt><dd>{{ 'ja' if user.totp_enabled else 'nein' }}</dd>
+      <dt>Erstellt</dt><dd class="muted">{{ user.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</dd>
     </dl>
   </div>
 
   <div class="panel action-form">
     {% if not user.is_active %}
     <form method="post" action="{{ url_for('admin_ui.approve_user', user_id=user.id) }}">
-      <button type="submit">Approve account</button>
+      <button type="submit">Konto genehmigen</button>
     </form>
     {% else %}
     <form method="post" action="{{ url_for('admin_ui.freeze_user', user_id=user.id) }}">
-      <button type="submit" class="secondary">Freeze account</button>
+      <button type="submit" class="secondary">Konto sperren</button>
     </form>
     {% endif %}
   </div>
 
   <div class="panel">
-    <h2>Balances</h2>
+    <h2>Guthaben</h2>
     <table>
-      <thead><tr><th>Asset</th><th>Balance</th></tr></thead>
+      <thead><tr><th>Asset</th><th>Guthaben</th></tr></thead>
       <tbody>
         {% for asset, amount in balances.items() %}
         <tr><td>{{ asset }}</td><td>{{ amount }}</td></tr>
         {% else %}
-        <tr><td colspan="2" class="muted">No balance.</td></tr>
+        <tr><td colspan="2" class="muted">Kein Guthaben.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
   <div class="panel">
-    <h2>Orders</h2>
+    <h2>Aufträge</h2>
     <table>
-      <thead><tr><th>ID</th><th>Status</th><th>From</th><th>To</th><th>Created</th></tr></thead>
+      <thead><tr><th>ID</th><th>Status</th><th>Von</th><th>An</th><th>Erstellt</th></tr></thead>
       <tbody>
         {% for o in orders %}
         <tr>
@@ -53,7 +53,7 @@
           <td class="muted">{{ o.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="muted">No orders yet.</td></tr>
+        <tr><td colspan="5" class="muted">Noch keine Aufträge vorhanden.</td></tr>
         {% endfor %}
       </tbody>
     </table>

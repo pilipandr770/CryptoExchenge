@@ -1,21 +1,21 @@
 {% extends "account_ui/base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Übersicht{% endblock %}
 {% block content %}
   {% if not user.is_active %}
   <div class="card">
-    <p class="muted">Your account is pending manual review before you can deposit, swap, or withdraw. This usually resolves quickly.</p>
+    <p class="muted">Ihr Konto wartet auf eine manuelle Prüfung, bevor Sie einzahlen, tauschen oder auszahlen können. Dies ist in der Regel schnell erledigt.</p>
   </div>
   {% endif %}
 
   <div class="card">
-    <h2>Your balances</h2>
+    <h2>Ihr Guthaben</h2>
     <table>
-      <thead><tr><th>Asset</th><th>Balance</th></tr></thead>
+      <thead><tr><th>Asset</th><th>Guthaben</th></tr></thead>
       <tbody>
         {% for asset, amount in balances.items() %}
         <tr><td>{{ asset }}</td><td>{{ amount }}</td></tr>
         {% else %}
-        <tr><td colspan="2" class="muted">No balance yet -- make a deposit to get started.</td></tr>
+        <tr><td colspan="2" class="muted">Noch kein Guthaben -- machen Sie eine Einzahlung, um loszulegen.</td></tr>
         {% endfor %}
       </tbody>
     </table>

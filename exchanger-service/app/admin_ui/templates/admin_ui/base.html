@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8">
   <title>{% block title %}Exchanger Admin{% endblock %}</title>
@@ -73,14 +73,14 @@
     <h1>Exchanger Admin</h1>
     {% if session.admin_logged_in %}
     <nav>
-      <a href="{{ url_for('admin_ui.list_orders') }}">Orders</a>
-      <a href="{{ url_for('admin_ui.users_list') }}">Users</a>
+      <a href="{{ url_for('admin_ui.list_orders') }}">Aufträge</a>
+      <a href="{{ url_for('admin_ui.users_list') }}">Nutzer</a>
       <a href="{{ url_for('admin_ui.treasury') }}">Treasury</a>
       <a href="{{ url_for('admin_ui.ledger') }}">Ledger</a>
-      <a href="{{ url_for('admin_ui.new_order_form') }}">+ New order</a>
+      <a href="{{ url_for('admin_ui.new_order_form') }}">+ Neuer Auftrag</a>
     </nav>
     <div class="spacer"></div>
-    <a href="{{ url_for('admin_ui.logout') }}">Log out</a>
+    <a href="{{ url_for('admin_ui.logout') }}">Abmelden</a>
     {% endif %}
   </header>
   <main>

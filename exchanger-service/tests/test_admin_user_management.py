@@ -45,13 +45,13 @@ def test_user_detail_404_redirects_for_unknown_user(auth_client):
 def test_user_detail_shows_approve_action_when_inactive(auth_client, app):
     user = _user(is_active=False)
     resp = auth_client.get(f"/admin/users/{user.id}")
-    assert b"Approve account" in resp.data
+    assert b"Konto genehmigen" in resp.data
 
 
 def test_user_detail_shows_freeze_action_when_active(auth_client, app):
     user = _user(is_active=True)
     resp = auth_client.get(f"/admin/users/{user.id}")
-    assert b"Freeze account" in resp.data
+    assert b"Konto sperren" in resp.data
 
 
 def test_approve_user_activates_account(auth_client, app):

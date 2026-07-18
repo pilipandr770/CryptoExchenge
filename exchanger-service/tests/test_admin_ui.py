@@ -112,7 +112,7 @@ def test_order_detail_renders_review_action(auth_client, app):
     order = _order_ready_for_review(app)
     resp = auth_client.get(f"/admin/orders/{order.id}")
     assert resp.status_code == 200
-    assert b"Approve and lock quote" in resp.data
+    assert b"Genehmigen und Kurs sperren" in resp.data
 
 
 def test_order_detail_404_for_unknown_order(auth_client):
@@ -127,7 +127,7 @@ def test_run_screening_form_renders_for_deposit_confirmed_order(auth_client, app
     order = _order_deposit_confirmed(app)
     resp = auth_client.get(f"/admin/orders/{order.id}")
     assert resp.status_code == 200
-    assert b"Run screening and lock quote" in resp.data
+    assert "Prüfung durchführen und Kurs sperren".encode() in resp.data
 
 
 def test_run_screening_accepted_locks_quote(auth_client, app, monkeypatch):
@@ -163,7 +163,7 @@ def test_run_screening_requires_client_name(auth_client, app):
     order = _order_deposit_confirmed(app)
     resp = auth_client.post(f"/admin/orders/{order.id}/run-screening", data={}, follow_redirects=True)
     assert resp.status_code == 200
-    assert b"client name is required" in resp.data
+    assert "Kundenname".encode() in resp.data
 
     refreshed = db.session.get(SwapOrder, order.id)
     assert refreshed.status == states.DEPOSIT_CONFIRMED
@@ -313,7 +313,7 @@ def test_treasury_rebalance_records_ledger_pair(auth_client, app):
 def test_treasury_rebalance_requires_both_amounts(auth_client):
     resp = auth_client.post("/admin/treasury/rebalance", data={"btc_amount": "0.5"}, follow_redirects=True)
     assert resp.status_code == 200
-    assert b"required" in resp.data
+    assert "erforderlich".encode() in resp.data
 
 
 # --- ledger --------------------------------------------------------------
@@ -355,7 +355,7 @@ TEST_MNEMONIC = "abandon abandon abandon abandon abandon abandon abandon abandon
 def test_new_order_form_renders(auth_client):
     resp = auth_client.get("/admin/orders/new")
     assert resp.status_code == 200
-    assert b"Create deposit / order" in resp.data
+    assert "Einzahlung / Auftrag erstellen".encode() in resp.data
 
 
 def test_create_order_derives_address_and_creates_order(auth_client, app, monkeypatch):
@@ -403,7 +403,7 @@ def test_create_order_second_deposit_address_gets_next_index(auth_client, app, m
 def test_create_order_rejects_missing_fields(auth_client):
     resp = auth_client.post("/admin/orders/new", data={"label": "x"}, follow_redirects=True)
     assert resp.status_code == 200
-    assert b"required" in resp.data
+    assert "erforderlich".encode() in resp.data
     assert SwapOrder.query.count() == 0
 
 
@@ -415,7 +415,7 @@ def test_create_order_rejects_unsupported_chain(auth_client, monkeypatch):
         follow_redirects=True,
     )
     assert resp.status_code == 200
-    assert b"Unsupported chain" in resp.data
+    assert "Nicht unterstützte Chain".encode() in resp.data
     assert SwapOrder.query.count() == 0
 
 
@@ -428,5 +428,5 @@ def test_create_order_surfaces_key_management_error(auth_client):
         follow_redirects=True,
     )
     assert resp.status_code == 200
-    assert b"hot wallet mnemonic" in resp.data
+    assert "Hot-Wallet-Mnemonic".encode() in resp.data
     assert SwapOrder.query.count() == 0

@@ -1,21 +1,21 @@
 {% extends "account_ui/base.html" %}
-{% block title %}Create account{% endblock %}
+{% block title %}Konto erstellen{% endblock %}
 {% block content %}
   <div class="card">
-    <h2>Create account</h2>
+    <h2>Konto erstellen</h2>
     <form method="post">
-      <label for="email">Email</label>
+      <label for="email">E-Mail</label>
       <input type="email" id="email" name="email" required>
-      <label for="password">Password</label>
+      <label for="password">Passwort</label>
       <input type="password" id="password" name="password" required>
-      <label for="full_name">Full name</label>
+      <label for="full_name">Vollständiger Name</label>
       <input type="text" id="full_name" name="full_name" required>
-      <label for="date_of_birth">Date of birth (optional)</label>
-      <input type="text" id="date_of_birth" name="date_of_birth" placeholder="YYYY-MM-DD">
-      <label for="country">Country (optional)</label>
+      <label for="date_of_birth">Geburtsdatum (optional)</label>
+      <input type="text" id="date_of_birth" name="date_of_birth" placeholder="JJJJ-MM-TT">
+      <label for="country">Land (optional)</label>
       <input type="text" id="country" name="country">
-      <button type="submit">Continue to 2FA setup</button>
+      <button type="submit">Weiter zur 2FA-Einrichtung</button>
     </form>
-    <p class="muted" style="margin-top: 14px;">Your name/DOB/country are used once for a sanctions check. Not re-checked on later trades.</p>
+    <p class="muted" style="margin-top: 14px;">Name, Geburtsdatum und Land werden einmalig für eine Sanktionsprüfung verwendet und nicht erneut bei jedem Handel abgefragt.</p>
   </div>
 {% endblock %}

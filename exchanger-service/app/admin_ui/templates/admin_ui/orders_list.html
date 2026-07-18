@@ -1,8 +1,8 @@
 {% extends "admin_ui/base.html" %}
-{% block title %}Orders - Exchanger Admin{% endblock %}
+{% block title %}Aufträge - Exchanger Admin{% endblock %}
 {% block content %}
   <div class="filters">
-    <a href="{{ url_for('admin_ui.list_orders') }}" class="{{ 'active' if not current_filter }}">All</a>
+    <a href="{{ url_for('admin_ui.list_orders') }}" class="{{ 'active' if not current_filter }}">Alle</a>
     {% for status in all_statuses %}
       <a href="{{ url_for('admin_ui.list_orders', status=status) }}" class="{{ 'active' if current_filter == status }}">{{ status }}</a>
     {% endfor %}
@@ -14,9 +14,9 @@
         <tr>
           <th>ID</th>
           <th>Status</th>
-          <th>From</th>
-          <th>To</th>
-          <th>Created</th>
+          <th>Von</th>
+          <th>An</th>
+          <th>Erstellt</th>
         </tr>
       </thead>
       <tbody>
@@ -29,7 +29,7 @@
           <td class="muted">{{ o.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="muted">No orders yet.</td></tr>
+        <tr><td colspan="5" class="muted">Noch keine Aufträge vorhanden.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -37,9 +37,9 @@
 
   {% if has_prev or has_next %}
   <div class="filters">
-    {% if has_prev %}<a href="{{ url_for('admin_ui.list_orders', status=current_filter, page=page-1) }}">&larr; Newer</a>{% endif %}
-    <span class="muted">Page {{ page }}</span>
-    {% if has_next %}<a href="{{ url_for('admin_ui.list_orders', status=current_filter, page=page+1) }}">Older &rarr;</a>{% endif %}
+    {% if has_prev %}<a href="{{ url_for('admin_ui.list_orders', status=current_filter, page=page-1) }}">&larr; Neuer</a>{% endif %}
+    <span class="muted">Seite {{ page }}</span>
+    {% if has_next %}<a href="{{ url_for('admin_ui.list_orders', status=current_filter, page=page+1) }}">Älter &rarr;</a>{% endif %}
   </div>
   {% endif %}
 {% endblock %}

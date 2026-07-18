@@ -1,0 +1,28 @@
+{% extends "legal_ui/base.html" %}
+{% block title %}Impressum{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="notice">Hinweis: Dieses Impressum gehört zu einer Demo-/Beispielanwendung ohne Finanzdienstleistungslizenz -- siehe <a href="{{ url_for('legal_ui.agb') }}">AGB</a>.</div>
+
+    <h3>Betreiber</h3>
+    <p>
+      Andrii Pylypchuk<br>
+      Bergmannweg 16<br>
+      65934 Frankfurt am Main<br>
+      Deutschland
+    </p>
+
+    <h3>Kontakt</h3>
+    <p>
+      E-Mail: <a href="mailto:info@andrii-it.de">info@andrii-it.de</a><br>
+      Telefon: +49 160 95030120<br>
+      Web: <a href="https://www.andrii-it.de">www.andrii-it.de</a>
+    </p>
+
+    <h3>Umsatzsteuer</h3>
+    <p>Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: DE456902445</p>
+
+    <h3>Verantwortlich für den Inhalt</h3>
+    <p>Andrii Pylypchuk (Anschrift wie oben)</p>
+  </div>
+{% endblock %}

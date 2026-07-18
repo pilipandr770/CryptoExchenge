@@ -1,15 +1,15 @@
 {% extends "account_ui/base.html" %}
-{% block title %}Log in{% endblock %}
+{% block title %}Anmelden{% endblock %}
 {% block content %}
   <div class="card">
-    <h2>Log in</h2>
+    <h2>Anmelden</h2>
     <form method="post">
-      <label for="email">Email</label>
+      <label for="email">E-Mail</label>
       <input type="email" id="email" name="email" required autofocus>
-      <label for="password">Password</label>
+      <label for="password">Passwort</label>
       <input type="password" id="password" name="password" required>
-      <button type="submit">Continue</button>
+      <button type="submit">Weiter</button>
     </form>
-    <p class="muted" style="margin-top: 14px;">No account yet? <a href="{{ url_for('account_ui.register') }}">Create one</a>.</p>
+    <p class="muted" style="margin-top: 14px;">Noch kein Konto? <a href="{{ url_for('account_ui.register') }}">Jetzt erstellen</a>.</p>
   </div>
 {% endblock %}

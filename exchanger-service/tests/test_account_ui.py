@@ -227,7 +227,7 @@ def test_swap_quote_rejects_insufficient_balance(client, monkeypatch, app):
         "to_chain": "ethereum", "to_asset": "USDC",
     })
     assert resp.status_code == 400
-    assert b"Insufficient balance" in resp.data
+    assert b"Unzureichendes Guthaben" in resp.data
 
 
 def test_swap_execute_debits_and_credits_balance(client, monkeypatch, app):
@@ -352,4 +352,4 @@ def test_orders_are_scoped_to_current_user(client, monkeypatch, app):
     assert resp.status_code == 302  # not found for this user -- redirected away
 
     resp = client.get("/account/orders")
-    assert b"No orders yet" in resp.data  # ownerB has none of their own
+    assert b"Noch keine Auftr" in resp.data  # ownerB has none of their own
