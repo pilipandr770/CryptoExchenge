@@ -2,11 +2,14 @@
 
 This service moves real cryptocurrency once you point it at mainnet. It is
 built for exactly one operator (you), using exactly your own funds, to
-demo a working custodial exchanger pipeline. Follow this runbook in order —
-testnet first, mainnet last, minimal amounts always. There is no legal/
-compliance text layer in this MVP (Impressum, ToS, disclaimers) — that's
-explicitly out of scope until the technology is stable, see the ТЗ. Do not
-onboard anyone else's funds onto this deployment.
+demo a working custodial exchanger pipeline to potential partners. Follow
+this runbook in order — testnet first, mainnet last, minimal amounts
+always. The UI is German-language and carries a prominent demo/no-license
+disclaimer (landing page + every account page's footer) plus a full legal
+page set (`/legal/impressum`, `/datenschutz`, `/agb`, `/widerruf`) — see
+`app/legal_ui/`. This does not make the deployment a licensed exchange; it
+only documents the demo honestly. Do not onboard anyone else's funds onto
+this deployment.
 
 ## 0. Prerequisites
 
@@ -72,6 +75,11 @@ Edit `exchanger-service/.env`:
 - `SECRET_KEY` — any random string (`python -c "import secrets; print(secrets.token_hex(32))"`).
 - `MARGIN_PERCENT` — the spread kept on every client-facing quote, baked
   into the rate (see app/pricing/margin.py). Defaults to 1.5.
+- `ACCOUNTS_TOTP_ENCRYPTION_KEY` — encrypts each registered user's 2FA
+  secret at rest (`app/accounts/auth.py`). Generate the same way as
+  `HOT_WALLET_KEYS_FERNET_KEY` below:
+  `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
+  Required — account registration 500s without it.
 - Leave `HOT_WALLET_KEYS_FILE` / `HOT_WALLET_KEYS_FERNET_KEY` for step 5.
 
 ## 5. Generate the hot wallet
@@ -127,39 +135,42 @@ cd CryptoExcheng
 docker compose up -d --build
 ```
 
-This starts Postgres, `exchanger.local` (the web app, port 5100), and
-`exchanger-listener` (the deposit-polling loop — nothing else polls chains
-on its own, see `app/cli.py`).
+This starts Postgres (with a healthcheck), `exchanger.local` (the web app,
+port 5100 — runs `flask db upgrade` on every start via
+`docker/entrypoint.sh` before gunicorn boots, and only reports "healthy"
+once that has succeeded and `/health` responds), and `exchanger-listener`
+(the deposit-polling loop, which waits for `exchanger.local` to be healthy
+before it starts — nothing else polls chains on its own, see `app/cli.py`).
+Migrations are applied automatically; you never need to run
+`flask db upgrade` by hand against a fresh deployment.
 
-```
-docker compose exec exchanger.local flask db upgrade
-```
-
-Two ways to start an order, both feed the same pipeline:
+Two ways to start a swap, both feed the same pipeline:
 
 - **As the operator**, open `http://localhost:5100/admin/login`, log in
-  with `ADMIN_USERNAME`/`ADMIN_PASSWORD`, and click **+ New order**
-  (`/admin/orders/new`).
-- **As a client would**, open `http://localhost:5100/exchange/` (no
-  login) — enter an amount, get a live quote (margin already applied),
-  confirm with a name and destination address. This is the no-login,
-  order-token flow described in `app/public_ui/routes.py`; it still relies
-  on you, the operator, manually driving every pipeline step from
-  `/admin` (run screening, execute swap, request withdrawal) -- it adds no
-  automation, just a client-facing window onto the same orders.
+  with `ADMIN_USERNAME`/`ADMIN_PASSWORD`, and click **+ Neuer Auftrag**
+  (`/admin/orders/new`) to hand-create a one-shot deposit-funded order —
+  useful for testing the raw pipeline without going through account
+  registration.
+- **As a real user would**, open `http://localhost:5100/account/` (German
+  UI, with the demo/no-license disclaimer and links to the legal pages) →
+  **Konto erstellen** → confirm the mandatory TOTP 2FA setup with an
+  authenticator app → **Einzahlung** to get a persistent deposit address
+  → once `exchanger-listener` credits the deposit, **Tausch** to swap
+  within your balance, **Auszahlung** to withdraw on-chain, or
+  **Überweisung** to send balance to another registered user. This is the
+  self-service `app/account_ui/` flow; screening happens once at
+  registration (`app/accounts/auth.py::screen_new_user`), not per swap.
 
 Either way, fund the shown deposit address from a Sepolia faucet (e.g.
 sepoliafaucet.com) for an ETH-chain order, or a Bitcoin testnet faucet for
-a BTC-chain order, and watch the order move through the pipeline in
-`/admin/orders/<id>` (or, for the client view, `/exchange/order/<token>`)
-as `exchanger-listener` picks up the deposit.
+a BTC-chain order, and watch it move through the pipeline in
+`/admin/orders/<id>` (admin-created orders) or `/account/orders/<id>`
+(account-based orders) as `exchanger-listener` picks up the deposit.
 
 Walk the full pipeline at least once on testnet: deposit confirmed →
-run screening (needs a client name — collected up front on the public
-flow, or typed into the admin form) → quote locked → swap executed →
-withdrawal requested → (wallet-ownership verification if above threshold)
-→ withdrawal sent → done. Fix anything that breaks before touching
-mainnet.
+screening → quote locked → swap executed → withdrawal requested →
+(wallet-ownership verification if above threshold) → withdrawal sent →
+done. Fix anything that breaks before touching mainnet.
 
 ## 7. Known MVP limitations (read before mainnet)
 
@@ -187,11 +198,14 @@ mainnet.
 - **No live on-chain balance check for ERC-20 treasury assets**
   (`/admin/ledger` reconciles native ETH/BTC against chain state; WBTC/USDC
   balances shown are ledger-only, labeled as such on the page).
-- **The public `/exchange/` flow is still operator-supervised, not
-  self-service.** No automatic screening/quote-locking/swap-execution is
-  triggered by a client's deposit; you still click through `/admin` for
-  every step, same as an admin-created order. See ТЗ scope decision:
-  "still demo, no real public onboarding."
+- **Admin-created orders (`/admin/orders/new`) are still operator-supervised,
+  not self-service.** No automatic screening/quote-locking/swap-execution
+  is triggered by a deposit there; you click through `/admin` for every
+  step. The account-based flow (`/account/`) is self-service for
+  balance-funded swaps/withdrawals/transfers, but registration is still
+  not public onboarding in the legally-onboarded sense — see the AGB
+  disclaimer (`/legal/agb`): no license, demo/partner-demonstration use
+  only, no third-party funds.
 
 ## 8. Go to mainnet (minimal amounts)
 
