@@ -1,0 +1,98 @@
+name: crypto-exchanger
+
+# Standalone stack for exchanger-service. Deliberately separate from
+# AML+18's own docker-compose.yml/project (per project decision -- this
+# service talks to AML-18 purely as an external developer-portal client
+# over HTTP, exactly like any other third-party integrator would; see
+# app/compliance_client/aml18_client.py). AML18_BASE_URL must point at
+# wherever you're running the AML+18 stack -- see RUNBOOK.md.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: exchanger-postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-exchanger}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-exchanger}
+      - POSTGRES_DB=${POSTGRES_DB:-exchanger}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-exchanger}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  exchanger.local:
+    build:
+      context: ./exchanger-service
+      dockerfile: ./Dockerfile
+    image: crypto-exchanger/exchanger-service
+    container_name: exchanger.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "5100:5000"
+    volumes:
+      - ./exchanger-service/tmp/data:/data
+    env_file:
+      - path: ./exchanger-service/.env
+        required: false
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg://exchanger:exchanger@postgres:5432/exchanger}
+      - AML18_BASE_URL=${AML18_BASE_URL:-http://host.docker.internal:8300}
+      - AML18_API_KEY=${AML18_API_KEY:-}
+      - WALLET_OWNERSHIP_THRESHOLD_EUR=${WALLET_OWNERSHIP_THRESHOLD_EUR:-1000}
+      - ZEROX_API_BASE_URL=${ZEROX_API_BASE_URL:-https://api.0x.org}
+      - ZEROX_API_KEY=${ZEROX_API_KEY:-}
+      - SWAP_QUOTE_TTL_SECONDS=${SWAP_QUOTE_TTL_SECONDS:-30}
+      - EVM_RPC_URL=${EVM_RPC_URL:-}
+      - EVM_CHAIN_ID=${EVM_CHAIN_ID:-1}
+      - EVM_SEPOLIA_RPC_URL=${EVM_SEPOLIA_RPC_URL:-}
+      - EVM_MIN_CONFIRMATIONS=${EVM_MIN_CONFIRMATIONS:-12}
+      - BTC_ESPLORA_API_BASE_URL=${BTC_ESPLORA_API_BASE_URL:-https://blockstream.info/api}
+      - BTC_NETWORK=${BTC_NETWORK:-mainnet}
+      - BTC_MIN_CONFIRMATIONS=${BTC_MIN_CONFIRMATIONS:-1}
+      - HOT_WALLET_KEYS_FILE=${HOT_WALLET_KEYS_FILE:-/data/hot_wallet_keys.enc.json}
+      - HOT_WALLET_KEYS_FERNET_KEY=${HOT_WALLET_KEYS_FERNET_KEY:-}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - SECRET_KEY=${SECRET_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Polls the configured chains for confirmed deposits (app/cli.py
+  # listen-deposits) and advances matching SwapOrders -- nothing in the web
+  # request path polls on its own, so deposits are never detected without
+  # this running. Reuses the image built above; `docker compose build` must
+  # run before `up` so the image already exists locally.
+  exchanger-listener:
+    image: crypto-exchanger/exchanger-service
+    container_name: exchanger-listener
+    depends_on:
+      exchanger.local:
+        condition: service_started
+    command: ["flask", "listen-deposits"]
+    volumes:
+      - ./exchanger-service/tmp/data:/data
+    env_file:
+      - path: ./exchanger-service/.env
+        required: false
+    environment:
+      - FLASK_APP=wsgi.py
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg://exchanger:exchanger@postgres:5432/exchanger}
+      - EVM_RPC_URL=${EVM_RPC_URL:-}
+      - EVM_CHAIN_ID=${EVM_CHAIN_ID:-1}
+      - EVM_MIN_CONFIRMATIONS=${EVM_MIN_CONFIRMATIONS:-12}
+      - EVM_LISTENER_POLL_INTERVAL_SECONDS=${EVM_LISTENER_POLL_INTERVAL_SECONDS:-15}
+      - BTC_ESPLORA_API_BASE_URL=${BTC_ESPLORA_API_BASE_URL:-https://blockstream.info/api}
+      - BTC_NETWORK=${BTC_NETWORK:-mainnet}
+      - BTC_MIN_CONFIRMATIONS=${BTC_MIN_CONFIRMATIONS:-1}
+      - BTC_LISTENER_POLL_INTERVAL_SECONDS=${BTC_LISTENER_POLL_INTERVAL_SECONDS:-30}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  postgres-data:

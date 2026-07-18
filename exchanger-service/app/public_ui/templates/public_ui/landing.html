@@ -1,0 +1,62 @@
+{% extends "public_ui/base.html" %}
+{% block title %}Exchange crypto{% endblock %}
+{% block content %}
+  <div class="card">
+    <form method="post" action="{{ url_for('public_ui.preview_quote') }}">
+      <label for="from_asset">You send</label>
+      <div class="row">
+        <input type="text" id="from_asset" name="from_asset" placeholder="ETH" value="{{ form_values.from_asset if form_values else '' }}" required>
+        <select name="from_chain" required>
+          {% for chain in chains %}
+          <option value="{{ chain }}" {{ 'selected' if form_values and form_values.from_chain == chain }}>{{ chain }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <input type="number" step="0.00000001" name="from_amount" placeholder="Amount" value="{{ form_values.from_amount if form_values else '' }}" required style="margin-top: 8px;">
+
+      <label for="to_asset">You get</label>
+      <div class="row">
+        <input type="text" id="to_asset" name="to_asset" placeholder="USDC" value="{{ form_values.to_asset if form_values else '' }}" required>
+        <select name="to_chain" required>
+          {% for chain in chains %}
+          <option value="{{ chain }}" {{ 'selected' if form_values and form_values.to_chain == chain }}>{{ chain }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit">Get rate</button>
+    </form>
+  </div>
+
+  {% if preview %}
+  <div class="card">
+    <div class="amount-preview">
+      <div class="muted">You will receive approximately</div>
+      <div class="big">{{ preview.to_amount }} {{ form_values.to_asset }}</div>
+      <div class="muted">Rate locked for a short window once you confirm -- see below.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <form method="post" action="{{ url_for('public_ui.create_order') }}">
+      <input type="hidden" name="from_chain" value="{{ form_values.from_chain }}">
+      <input type="hidden" name="from_asset" value="{{ form_values.from_asset }}">
+      <input type="hidden" name="from_amount" value="{{ form_values.from_amount }}">
+      <input type="hidden" name="to_chain" value="{{ form_values.to_chain }}">
+      <input type="hidden" name="to_asset" value="{{ form_values.to_asset }}">
+
+      <label for="withdrawal_address">Your {{ form_values.to_asset }} address (where you'll receive funds)</label>
+      <input type="text" id="withdrawal_address" name="withdrawal_address" required>
+
+      <label for="client_name">Your name</label>
+      <input type="text" id="client_name" name="client_name" required>
+
+      <label for="client_email">Email (optional)</label>
+      <input type="email" id="client_email" name="client_email">
+
+      <button type="submit">Confirm exchange</button>
+      <p class="muted" style="margin-top: 10px;">A deposit address is generated for you on confirmation. Sending funds means you accept the current rate.</p>
+    </form>
+  </div>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "admin_ui/base.html" %}
+{% block title %}Order #{{ order.id }} - Exchanger Admin{% endblock %}
+{% block content %}
+  <div class="panel">
+    <h2>Order #{{ order.id }} <span class="badge">{{ order.status }}</span></h2>
+    <dl class="kv">
+      <dt>Client</dt><dd>{{ order.client_name or '—' }}{% if order.client_email %} &lt;{{ order.client_email }}&gt;{% endif %}</dd>
+      <dt>Deposit</dt><dd>{{ order.from_amount }} {{ order.from_asset }} on {{ order.from_chain }}
+        {% if order.deposit_address %} to <code>{{ order.deposit_address.address }}</code>{% endif %}</dd>
+      <dt>Deposit tx</dt><dd>{{ order.deposit_tx_hash or '—' }}</dd>
+      <dt>Screening</dt><dd>{{ order.screening_decision or '—' }} (score {{ order.screening_score if order.screening_score is not none else '—' }})</dd>
+      <dt>Quote (client-facing)</dt><dd>{{ order.quote_id or '—' }}{% if order.to_amount_quoted %} — {{ order.to_amount_quoted }} {{ order.to_asset }}{% endif %}{% if order.margin_percent %} <span class="muted">(margin {{ order.margin_percent }}%)</span>{% endif %}</dd>
+      <dt>Quote (gross, internal)</dt><dd class="muted">{{ order.to_amount_quoted_gross or '—' }}{% if order.to_amount_quoted_gross %} {{ order.to_asset }}{% endif %}</dd>
+      <dt>Treasury rebalance needed</dt><dd>{{ 'yes' if order.requires_treasury_rebalance else 'no' }}</dd>
+      <dt>Swap tx</dt><dd>{{ order.swap_tx_hash or '—' }}</dd>
+      <dt>Executed amount (gross)</dt><dd>{{ order.to_amount_executed or '—' }} {{ order.to_asset if order.to_amount_executed }}</dd>
+      <dt>Payout amount (net, to client)</dt><dd>{{ order.to_amount_payout or '—' }} {{ order.to_asset if order.to_amount_payout }}</dd>
+      <dt>Withdrawal address</dt><dd>{{ order.withdrawal_address or '—' }}</dd>
+      <dt>Wallet-ownership verification</dt><dd>{{ order.wallet_ownership_verification_id or '—' }}</dd>
+      <dt>Withdrawal tx</dt><dd>{{ order.withdrawal_tx_hash or '—' }}</dd>
+      <dt>Last error</dt><dd>{{ order.last_error or '—' }}</dd>
+      <dt>Updated</dt><dd class="muted">{{ order.updated_at.strftime("%Y-%m-%d %H:%M UTC") }}</dd>
+    </dl>
+  </div>
+
+  {% if order.status == states.DEPOSIT_CONFIRMED %}
+  <div class="panel action-form">
+    <h2>Run screening</h2>
+    <p class="muted">Calls AML-18's sanctions check for this client, then locks a client-facing quote if accepted.</p>
+    <form method="post" action="{{ url_for('admin_ui.run_screening', order_id=order.id) }}">
+      <label for="client_name">Client name</label>
+      <input type="text" id="client_name" name="client_name" value="{{ order.client_name or '' }}" required>
+      <button type="submit">Run screening and lock quote</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if order.status == states.PENDING_MANUAL_REVIEW %}
+  <div class="panel action-form">
+    <h2>Approve manual review</h2>
+    <p class="muted">Screening decision: <strong>{{ order.screening_decision }}</strong> (score {{ order.screening_score }}). Approving locks a quote and continues the pipeline.</p>
+    <form method="post" action="{{ url_for('admin_ui.approve_review', order_id=order.id) }}">
+      <button type="submit">Approve and lock quote</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if order.status == states.PENDING_TREASURY_REBALANCE %}
+  <div class="panel action-form">
+    <h2>Treasury rebalance required</h2>
+    <p class="muted">This BTC-leg order needs WBTC the treasury doesn't currently have. Run the manual BTC&harr;WBTC conversion on <a href="{{ url_for('admin_ui.treasury') }}">/admin/treasury</a> first, then retry here.</p>
+    <form method="post" action="{{ url_for('admin_ui.retry_rebalance', order_id=order.id) }}">
+      <button type="submit">Retry now</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if order.status == states.QUOTE_LOCKED %}
+  <div class="panel action-form">
+    <h2>Execute swap</h2>
+    <form method="post" action="{{ url_for('admin_ui.trigger_execute_swap', order_id=order.id) }}">
+      <button type="submit">Submit swap transaction</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if order.status == states.SWAP_EXECUTING %}
+  <div class="panel action-form">
+    <h2>Awaiting swap confirmation</h2>
+    <form method="post" action="{{ url_for('admin_ui.trigger_execute_swap', order_id=order.id) }}">
+      <button type="submit">Check confirmations</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if order.status == states.SWAP_COMPLETE %}
+  <div class="panel action-form">
+    <h2>Request withdrawal</h2>
+    <form method="post" action="{{ url_for('admin_ui.request_withdrawal', order_id=order.id) }}">
+      {% if order.withdrawal_address %}
+      <label for="withdrawal_address">Destination address (provided by the client at order creation)</label>
+      <input type="text" id="withdrawal_address" value="{{ order.withdrawal_address }}" readonly>
+      {% else %}
+      <label for="withdrawal_address">Destination address</label>
+      <input type="text" id="withdrawal_address" name="withdrawal_address" required>
+      {% endif %}
+      <label for="transfer_amount_eur">EUR-equivalent value (for the AML-18 wallet-ownership threshold check)</label>
+      <input type="number" step="0.01" id="transfer_amount_eur" name="transfer_amount_eur" required>
+      <button type="submit">Request withdrawal</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if order.status == states.WITHDRAWAL_VERIFICATION %}
+  <div class="panel action-form">
+    <h2>Wallet-ownership verification</h2>
+    <p class="muted">Sign this message with the destination wallet's key (e.g. in MetaMask's "Sign Message"), then paste the signature below.</p>
+    <p><code>{{ order.wallet_ownership_challenge_message }}</code></p>
+    <form method="post" action="{{ url_for('admin_ui.submit_verification', order_id=order.id) }}">
+      <label for="signature">Signature</label>
+      <input type="text" id="signature" name="signature" required>
+      <label for="transfer_amount_eur">EUR-equivalent value</label>
+      <input type="number" step="0.01" id="transfer_amount_eur" name="transfer_amount_eur">
+      <button type="submit">Submit signature and send</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if order.status == states.WITHDRAWAL_SENT %}
+  <div class="panel action-form">
+    <h2>Awaiting withdrawal confirmation</h2>
+    <form method="post" action="{{ url_for('admin_ui.poll_withdrawal', order_id=order.id) }}">
+      <button type="submit">Check confirmations</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <div class="panel">
+    <h2>Audit log</h2>
+    <table>
+      <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Detail</th></tr></thead>
+      <tbody>
+        {% for entry in audit_entries %}
+        <tr>
+          <td class="muted">{{ entry.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
+          <td>{{ entry.actor }}</td>
+          <td>{{ entry.action }}</td>
+          <td class="muted">{{ entry.detail }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="muted">No audit entries yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

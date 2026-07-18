@@ -1,0 +1,11 @@
+Flask>=3.1.0
+Flask-SQLAlchemy>=3.1.1
+Flask-Migrate>=4.0.7
+pydantic>=2.10
+requests>=2.32.3
+python-dotenv>=1.0.1
+gunicorn>=23.0.0
+eth-account>=0.13
+bitcoin-utils>=0.7
+cryptography>=43.0
+psycopg[binary]>=3.2

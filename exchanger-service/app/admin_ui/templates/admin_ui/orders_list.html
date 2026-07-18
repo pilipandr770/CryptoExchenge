@@ -1,0 +1,45 @@
+{% extends "admin_ui/base.html" %}
+{% block title %}Orders - Exchanger Admin{% endblock %}
+{% block content %}
+  <div class="filters">
+    <a href="{{ url_for('admin_ui.list_orders') }}" class="{{ 'active' if not current_filter }}">All</a>
+    {% for status in all_statuses %}
+      <a href="{{ url_for('admin_ui.list_orders', status=status) }}" class="{{ 'active' if current_filter == status }}">{{ status }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="panel">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Status</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td><a href="{{ url_for('admin_ui.order_detail', order_id=o.id) }}">#{{ o.id }}</a></td>
+          <td><span class="badge">{{ o.status }}</span></td>
+          <td>{{ o.from_amount }} {{ o.from_asset }} <span class="muted">({{ o.from_chain }})</span></td>
+          <td>{{ o.to_amount_executed or o.to_amount_quoted or '—' }} {{ o.to_asset }} <span class="muted">({{ o.to_chain }})</span></td>
+          <td class="muted">{{ o.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted">No orders yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if has_prev or has_next %}
+  <div class="filters">
+    {% if has_prev %}<a href="{{ url_for('admin_ui.list_orders', status=current_filter, page=page-1) }}">&larr; Newer</a>{% endif %}
+    <span class="muted">Page {{ page }}</span>
+    {% if has_next %}<a href="{{ url_for('admin_ui.list_orders', status=current_filter, page=page+1) }}">Older &rarr;</a>{% endif %}
+  </div>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "admin_ui/base.html" %}
+{% block title %}Log in - Exchanger Admin{% endblock %}
+{% block content %}
+  <div class="panel" style="max-width: 360px; margin: 60px auto;">
+    <h2>Admin log in</h2>
+    <form method="post">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" autocomplete="username" required>
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required>
+      <button type="submit">Log in</button>
+    </form>
+  </div>
+{% endblock %}

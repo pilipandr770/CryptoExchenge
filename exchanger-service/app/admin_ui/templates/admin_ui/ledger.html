@@ -1,0 +1,48 @@
+{% extends "admin_ui/base.html" %}
+{% block title %}Ledger reconciliation - Exchanger Admin{% endblock %}
+{% block content %}
+  <div class="panel">
+    <h2>On-chain vs internal ledger</h2>
+    <table>
+      <thead><tr><th>Account</th><th>Asset</th><th>Ledger</th><th>On-chain</th><th>Difference</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for r in results %}
+        <tr>
+          <td><code>{{ r.account }}</code></td>
+          <td>{{ r.asset }}</td>
+          <td>{{ r.ledger_balance }}</td>
+          <td>{{ r.onchain_balance }}</td>
+          <td>{{ r.difference }}</td>
+          <td><span class="badge {{ 'ok' if r.ok else 'bad' }}">{{ 'OK' if r.ok else 'MISMATCH' }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="muted">No on-chain balances could be fetched -- configure EVM_RPC_URL / BTC_ESPLORA_API_BASE_URL.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if fetch_errors %}
+  <div class="panel">
+    <h2>Fetch errors</h2>
+    <ul>
+      {% for err in fetch_errors %}<li class="muted">{{ err }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if ledger_only %}
+  <div class="panel">
+    <h2>Ledger-only balances (no on-chain check in this MVP)</h2>
+    <p class="muted">ERC-20 balances (WBTC, USDC, ...) aren't fetched on-chain by this page yet -- shown as recorded in the internal ledger only.</p>
+    <table>
+      <thead><tr><th>Account</th><th>Asset</th><th>Balance</th></tr></thead>
+      <tbody>
+        {% for row in ledger_only %}
+        <tr><td><code>{{ row.account }}</code></td><td>{{ row.asset }}</td><td>{{ row.balance }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+{% endblock %}

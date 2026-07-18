@@ -1,0 +1,8 @@
+{% extends "public_ui/base.html" %}
+{% block title %}Order not found{% endblock %}
+{% block content %}
+  <div class="card" style="text-align: center;">
+    <p>We couldn't find an order with that reference.</p>
+    <p class="muted">Double-check the link, or <a href="{{ url_for('public_ui.landing') }}">start a new exchange</a>.</p>
+  </div>
+{% endblock %}

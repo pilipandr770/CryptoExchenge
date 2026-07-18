@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Exchange{% endblock %}</title>
+  <style>
+    :root {
+      --bg: #0f1115; --panel: #171a21; --text: #eef0f4; --muted: #9aa2b1;
+      --border: #2a2f3a; --accent: #4f7cff; --accent-hover: #6a8fff;
+      --ok: #2fbf71; --warn: #e8a23d; --bad: #e5484d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+    }
+    header {
+      padding: 20px 24px; text-align: center; border-bottom: 1px solid var(--border);
+    }
+    header h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: 0.02em; }
+    header p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+    main { max-width: 480px; margin: 0 auto; padding: 32px 20px 60px; }
+    .card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px; margin-bottom: 16px;
+    }
+    label { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 6px; color: var(--muted); }
+    label:first-child { margin-top: 0; }
+    input, select {
+      width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 15px; background: #10131a; color: var(--text);
+    }
+    input:focus, select:focus { outline: none; border-color: var(--accent); }
+    input[readonly] { color: var(--muted); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    button {
+      width: 100%; margin-top: 18px; padding: 13px; border-radius: 8px; border: none;
+      background: var(--accent); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+    button:hover { background: var(--accent-hover); }
+    .muted { color: var(--muted); font-size: 13px; }
+    .flash { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+    .flash.success { background: rgba(47,191,113,0.12); color: var(--ok); border: 1px solid rgba(47,191,113,0.3); }
+    .flash.error { background: rgba(229,72,77,0.12); color: var(--bad); border: 1px solid rgba(229,72,77,0.3); }
+    code {
+      background: #10131a; padding: 8px 10px; border-radius: 6px; font-size: 13px;
+      display: block; word-break: break-all; border: 1px solid var(--border);
+    }
+    .status-badge {
+      display: inline-block; padding: 5px 14px; border-radius: 999px;
+      font-size: 13px; font-weight: 700; background: var(--accent); color: #fff;
+    }
+    .status-badge.done { background: var(--ok); }
+    .status-badge.failed { background: var(--bad); }
+    .amount-preview { text-align: center; padding: 10px 0; }
+    .amount-preview .big { font-size: 28px; font-weight: 700; }
+    .kv { display: grid; grid-template-columns: 140px 1fr; gap: 8px 12px; font-size: 14px; margin-top: 6px; }
+    .kv dt { color: var(--muted); } .kv dd { margin: 0; word-break: break-all; }
+    footer { text-align: center; padding: 20px; font-size: 12px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Crypto Exchanger</h1>
+    <p>Demo build -- personal-funds MVP, not a licensed public exchange</p>
+  </header>
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer>No account needed. Track your order with the link on this page.</footer>
+</body>
+</html>
