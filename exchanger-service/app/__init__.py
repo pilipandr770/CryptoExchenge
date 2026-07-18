@@ -41,10 +41,11 @@ def create_app(config_class=Config):
     from app.admin_ui.routes import admin_ui_bp
     app.register_blueprint(admin_ui_bp)
 
-    from app.public_ui.routes import public_ui_bp
-    app.register_blueprint(public_ui_bp)
+    from app.account_ui.routes import account_ui_bp
+    app.register_blueprint(account_ui_bp)
 
     # Import models so Alembic/SQLAlchemy metadata picks them up.
+    from app.accounts import models as _accounts_models  # noqa: F401
     from app.custody import models as _custody_models  # noqa: F401
     from app.swap import models as _swap_models  # noqa: F401
     from app.ledger import models as _ledger_models  # noqa: F401

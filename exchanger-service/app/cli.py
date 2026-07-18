@@ -37,6 +37,8 @@ def listen_deposits_command(once):
                 from_block = last_evm_block_scanned + 1 if last_evm_block_scanned is not None else max(head - 5, 0)
                 for order in evm_listener.scan_range(from_block, head, chain="ethereum"):
                     click.echo(f"confirmed deposit: order={order.id} tx={order.deposit_tx_hash}")
+                for user_id, asset, amount, tx_hash in evm_listener.scan_for_user_deposits(from_block, head, chain="ethereum"):
+                    click.echo(f"credited account deposit: user={user_id} amount={amount} {asset} tx={tx_hash}")
                 last_evm_block_scanned = head
             except Exception as exc:
                 click.echo(f"EVM listener error: {exc}")
@@ -45,6 +47,8 @@ def listen_deposits_command(once):
             try:
                 for order in btc_listener.poll():
                     click.echo(f"confirmed deposit: order={order.id} tx={order.deposit_tx_hash}")
+                for user_id, asset, amount, tx_hash in btc_listener.poll_user_deposits():
+                    click.echo(f"credited account deposit: user={user_id} amount={amount} {asset} tx={tx_hash}")
             except Exception as exc:
                 click.echo(f"BTC listener error: {exc}")
 

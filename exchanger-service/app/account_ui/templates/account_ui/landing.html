@@ -1,0 +1,9 @@
+{% extends "account_ui/base.html" %}
+{% block title %}Crypto Exchanger{% endblock %}
+{% block content %}
+  <div class="card" style="text-align: center;">
+    <p>Deposit, swap, and withdraw crypto from your own account balance.</p>
+    <form method="get" action="{{ url_for('account_ui.register') }}"><button type="submit">Create account</button></form>
+    <form method="get" action="{{ url_for('account_ui.login') }}"><button type="submit" class="secondary">Log in</button></form>
+  </div>
+{% endblock %}

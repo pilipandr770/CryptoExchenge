@@ -45,7 +45,11 @@ _HAPPY_PATH_TRANSITIONS = {
     QUOTE_LOCKED: {PENDING_TREASURY_REBALANCE, SWAP_EXECUTING},
     PENDING_TREASURY_REBALANCE: {SWAP_EXECUTING},
     SWAP_EXECUTING: {SWAP_COMPLETE},
-    SWAP_COMPLETE: {WITHDRAWAL_REQUESTED},
+    # DONE directly from SWAP_COMPLETE is the "settle into account balance"
+    # path (funding_source="account_balance", orchestrator.settle_to_balance) --
+    # no on-chain withdrawal is forced, the result just becomes spendable
+    # balance. WITHDRAWAL_REQUESTED is the normal on-chain-withdrawal path.
+    SWAP_COMPLETE: {WITHDRAWAL_REQUESTED, DONE},
     WITHDRAWAL_REQUESTED: {WITHDRAWAL_VERIFICATION, WITHDRAWAL_SENT},
     WITHDRAWAL_VERIFICATION: {WITHDRAWAL_SENT},
     WITHDRAWAL_SENT: {DONE},

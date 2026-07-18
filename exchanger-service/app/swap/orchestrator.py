@@ -12,6 +12,7 @@ existing state instead of double-submitting a transaction.
 
 from decimal import Decimal
 
+from app.accounts.balances import credit_user, debit_user
 from app.audit.models import AuditLog
 from app.compliance_client.screening_gate import enforce_screening_gate, enforce_withdrawal_gate
 from app.extensions import db
@@ -20,6 +21,7 @@ from app.liquidity.base import LiquidityAdapterError, Quote
 from app.liquidity.btc_treasury_adapter import TreasuryRebalanceRequiredError
 from app.pricing.margin import apply_margin
 from app.swap import states
+from app.swap.models import SwapOrder
 
 
 class WithdrawalNotClearedError(Exception):
@@ -39,13 +41,22 @@ def _audit(actor: str, action: str, order, detail: dict = None):
 
 def confirm_deposit(order, tx_hash: str, actor: str = "system"):
     """DEPOSIT_PENDING -> DEPOSIT_CONFIRMED, called by a chain listener once
-    it has observed enough confirmations on the deposit address."""
+    it has observed enough confirmations on the deposit address. Credits
+    treasury:{chain}:{asset} -- real funds now sit at a platform-controlled
+    address -- alongside the existing user:<label> label-only credit (this
+    matters once poll_swap_completion later debits treasury for the
+    swap-out leg: without crediting it here first, treasury would drift
+    negative across swaps)."""
     if order.status != states.DEPOSIT_PENDING:
         return order
 
     order.deposit_tx_hash = tx_hash
     order.mark_status(states.DEPOSIT_CONFIRMED)
     label = order.deposit_address.label if order.deposit_address else "unknown"
+    db.session.add(LedgerEntry(
+        swap_order_id=order.id, account=f"treasury:{order.from_chain}:{order.from_asset}",
+        asset=order.from_asset, amount=order.from_amount, entry_type="deposit",
+    ))
     db.session.add(LedgerEntry(
         swap_order_id=order.id, account=f"user:{label}",
         asset=order.from_asset, amount=order.from_amount, entry_type="deposit",
@@ -147,6 +158,100 @@ def lock_quote(order, liquidity_adapter, margin_percent: Decimal, actor: str = "
         "to_amount_quoted_gross": str(quote.to_amount),
         "to_amount_quoted_net": str(order.to_amount_quoted),
         "margin_percent": str(margin_percent),
+    })
+    db.session.commit()
+    return order
+
+
+def lock_quote_from_balance(order, liquidity_adapter, margin_percent: Decimal, actor: str = "system"):
+    """DEPOSIT_PENDING -> QUOTE_LOCKED in one call, for a
+    funding_source="account_balance" order: debits `from_amount` from the
+    order's user's existing balance instead of waiting on a fresh on-chain
+    deposit, and skips the AML-18 network call entirely -- that user was
+    already screened once at registration (app/accounts/auth.py::screen_new_user),
+    not re-checked per swap, per the project's KYC-once decision. Walks
+    DEPOSIT_PENDING -> DEPOSIT_CONFIRMED -> SCREENING itself (no separate
+    confirm_deposit/advance_to_screening call needed -- there is no deposit
+    tx to wait for), then delegates to lock_quote() for the actual
+    quote/margin/PENDING_TREASURY_REBALANCE logic, unchanged.
+
+    Raises app.accounts.balances.InsufficientBalanceError -- and leaves the
+    order untouched -- if the user's balance can't cover from_amount."""
+    if order.status != states.DEPOSIT_PENDING or order.funding_source != "account_balance":
+        return order
+
+    debit_user(order.user_id, order.from_asset, order.from_amount, entry_type="swap_out", swap_order_id=order.id)
+
+    order.mark_status(states.DEPOSIT_CONFIRMED)
+    order.mark_status(states.SCREENING)
+    _audit(actor, "balance_debited_screening_reused", order, {
+        "from_asset": order.from_asset, "from_amount": str(order.from_amount),
+    })
+    db.session.commit()
+
+    return lock_quote(order, liquidity_adapter, margin_percent, actor=actor)
+
+
+def settle_to_balance(order, actor: str = "system"):
+    """SWAP_COMPLETE -> DONE for a funding_source="account_balance" order:
+    credits the destination asset to the user's balance and finishes the
+    order immediately. No on-chain withdrawal is forced -- the result just
+    becomes spendable balance until the user separately requests a
+    withdrawal (see withdraw_from_balance) or spends it in another
+    balance-funded swap."""
+    if order.status != states.SWAP_COMPLETE or order.funding_source != "account_balance":
+        return order
+
+    credit_user(order.user_id, order.to_asset, order.to_amount_payout, entry_type="swap_in", swap_order_id=order.id)
+    order.mark_status(states.DONE)
+    _audit(actor, "settled_to_balance", order, {
+        "to_asset": order.to_asset, "to_amount_payout": str(order.to_amount_payout),
+    })
+    db.session.commit()
+    return order
+
+
+def withdraw_from_balance(user, chain: str, asset: str, amount: Decimal, withdrawal_address: str, actor: str):
+    """Creates a "pure withdrawal" SwapOrder (from_asset == to_asset, no
+    swap involved) funded from the user's existing balance, and walks it
+    straight to WITHDRAWAL_REQUESTED in one call. From there it rejoins the
+    exact same gate_withdrawal / send_withdrawal / poll_withdrawal_completion
+    path used by a real swap's withdrawal -- those functions only look at
+    generic order attributes (to_chain, withdrawal_address,
+    to_amount_payout, wallet_ownership_*, mark_status), so a degenerate
+    same-asset order needs no special-casing there.
+
+    Raises app.accounts.balances.InsufficientBalanceError -- and creates no
+    order at all -- if the user's balance can't cover `amount`."""
+    debit_user(user.id, asset, amount, entry_type="withdrawal")
+
+    order = SwapOrder(
+        from_chain=chain, from_asset=asset, from_amount=amount,
+        to_chain=chain, to_asset=asset,
+        user_id=user.id, funding_source="account_balance",
+        withdrawal_address=withdrawal_address,
+    )
+    db.session.add(order)
+    db.session.flush()
+
+    # No swap needed (from_asset == to_asset) -- walk straight through the
+    # happy-path graph to WITHDRAWAL_REQUESTED. Quote/executed/payout are
+    # all just `amount`; margin is 0% (a pure withdrawal isn't a trade).
+    order.margin_percent = Decimal("0")
+    order.to_amount_quoted_gross = amount
+    order.to_amount_quoted = amount
+    order.to_amount_executed = amount
+    order.to_amount_payout = amount
+
+    order.mark_status(states.DEPOSIT_CONFIRMED)
+    order.mark_status(states.SCREENING)
+    order.mark_status(states.QUOTE_LOCKED)
+    order.mark_status(states.SWAP_EXECUTING)
+    order.mark_status(states.SWAP_COMPLETE)
+    order.mark_status(states.WITHDRAWAL_REQUESTED)
+
+    _audit(actor, "balance_withdrawal_requested", order, {
+        "asset": asset, "amount": str(amount), "withdrawal_address": withdrawal_address,
     })
     db.session.commit()
     return order

@@ -1,0 +1,41 @@
+{% extends "account_ui/base.html" %}
+{% block title %}Order #{{ order.id }}{% endblock %}
+{% block content %}
+  <div class="card" style="text-align: center;">
+    <span class="status-badge{% if order.status == 'DONE' %} done{% elif order.status == 'FAILED' %} failed{% endif %}">{{ order.status }}</span>
+  </div>
+
+  <div class="card">
+    <dl class="kv">
+      <dt>You sent</dt><dd>{{ order.from_amount }} {{ order.from_asset }} ({{ order.from_chain }})</dd>
+      <dt>You get</dt><dd>{% if order.to_amount_payout %}{{ order.to_amount_payout }}{% elif order.to_amount_quoted %}~{{ order.to_amount_quoted }}{% else %}—{% endif %} {{ order.to_asset }} ({{ order.to_chain }})</dd>
+      {% if order.withdrawal_address %}<dt>Withdrawal address</dt><dd>{{ order.withdrawal_address }}</dd>{% endif %}
+      {% if order.withdrawal_tx_hash %}<dt>Withdrawal tx</dt><dd>{{ order.withdrawal_tx_hash }}</dd>{% endif %}
+      {% if order.last_error %}<dt>Error</dt><dd>{{ order.last_error }}</dd>{% endif %}
+    </dl>
+  </div>
+
+  {% if order.status == states.WITHDRAWAL_VERIFICATION %}
+  <div class="card">
+    <h2>Verify wallet ownership</h2>
+    <p class="muted">Sign this message with the destination wallet's key (e.g. in MetaMask's "Sign Message"), then paste the signature below.</p>
+    <code>{{ order.wallet_ownership_challenge_message }}</code>
+    <form method="post" action="{{ url_for('account_ui.submit_verification', order_id=order.id) }}" style="margin-top: 14px;">
+      <label for="signature">Signature</label>
+      <input type="text" id="signature" name="signature" required>
+      <button type="submit">Submit and send</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if order.status in (states.SWAP_EXECUTING, states.WITHDRAWAL_SENT) %}
+  <div class="card">
+    <p class="muted">This step confirms automatically -- refresh this page in a moment, or check now:</p>
+    {% if order.status == states.WITHDRAWAL_SENT %}
+    <form method="post" action="{{ url_for('account_ui.poll_withdrawal', order_id=order.id) }}">
+      <button type="submit">Check confirmations</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endblock %}

@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: bfd7445aae54
+Revision ID: ddf73b420a51
 Revises: 
-Create Date: 2026-07-17 20:39:52.686452
+Create Date: 2026-07-18 10:27:08.300265
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'bfd7445aae54'
+revision = 'ddf73b420a51'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -28,17 +28,6 @@ def upgrade():
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('deposit_addresses',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('chain', sa.String(length=16), nullable=False),
-    sa.Column('address', sa.String(length=128), nullable=False),
-    sa.Column('derivation_index', sa.Integer(), nullable=False),
-    sa.Column('label', sa.String(length=128), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('address'),
-    sa.UniqueConstraint('chain', 'derivation_index', name='uq_deposit_address_chain_index')
-    )
     op.create_table('hot_wallets',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('chain', sa.String(length=16), nullable=False),
@@ -49,6 +38,49 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('chain')
     )
+    op.create_table('users',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('email', sa.String(length=256), nullable=False),
+    sa.Column('password_hash', sa.String(length=256), nullable=False),
+    sa.Column('full_name', sa.String(length=256), nullable=False),
+    sa.Column('date_of_birth', sa.String(length=32), nullable=True),
+    sa.Column('country', sa.String(length=256), nullable=True),
+    sa.Column('screening_decision', sa.String(length=16), nullable=True),
+    sa.Column('screening_score', sa.Float(), nullable=True),
+    sa.Column('totp_secret_encrypted', sa.LargeBinary(), nullable=True),
+    sa.Column('totp_enabled', sa.Boolean(), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('users', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_users_email'), ['email'], unique=True)
+
+    op.create_table('deposit_addresses',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('chain', sa.String(length=16), nullable=False),
+    sa.Column('address', sa.String(length=128), nullable=False),
+    sa.Column('derivation_index', sa.Integer(), nullable=False),
+    sa.Column('label', sa.String(length=128), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('address'),
+    sa.UniqueConstraint('chain', 'derivation_index', name='uq_deposit_address_chain_index'),
+    sa.UniqueConstraint('user_id', 'chain', name='uq_deposit_address_user_chain')
+    )
+    op.create_table('transfers',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('sender_id', sa.Integer(), nullable=False),
+    sa.Column('recipient_id', sa.Integer(), nullable=False),
+    sa.Column('asset', sa.String(length=16), nullable=False),
+    sa.Column('amount', sa.Numeric(precision=36, scale=18), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['recipient_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['sender_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('swap_orders',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('public_token', sa.String(length=32), nullable=False),
@@ -57,6 +89,8 @@ def upgrade():
     sa.Column('client_email', sa.String(length=256), nullable=True),
     sa.Column('client_date_of_birth', sa.String(length=32), nullable=True),
     sa.Column('client_country', sa.String(length=256), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('funding_source', sa.String(length=24), nullable=False),
     sa.Column('deposit_address_id', sa.Integer(), nullable=True),
     sa.Column('from_chain', sa.String(length=16), nullable=False),
     sa.Column('from_asset', sa.String(length=16), nullable=False),
@@ -85,6 +119,7 @@ def upgrade():
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['deposit_address_id'], ['deposit_addresses.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('public_token')
     )
@@ -94,25 +129,39 @@ def upgrade():
     op.create_table('ledger_entries',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('swap_order_id', sa.Integer(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('account', sa.String(length=128), nullable=False),
     sa.Column('asset', sa.String(length=16), nullable=False),
     sa.Column('amount', sa.Numeric(precision=36, scale=18), nullable=False),
     sa.Column('entry_type', sa.String(length=16), nullable=False),
+    sa.Column('tx_hash', sa.String(length=128), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['swap_order_id'], ['swap_orders.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    with op.batch_alter_table('ledger_entries', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_ledger_entries_tx_hash'), ['tx_hash'], unique=False)
+
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
+    with op.batch_alter_table('ledger_entries', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_ledger_entries_tx_hash'))
+
     op.drop_table('ledger_entries')
     with op.batch_alter_table('swap_orders', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_swap_orders_status'))
 
     op.drop_table('swap_orders')
-    op.drop_table('hot_wallets')
+    op.drop_table('transfers')
     op.drop_table('deposit_addresses')
+    with op.batch_alter_table('users', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_users_email'))
+
+    op.drop_table('users')
+    op.drop_table('hot_wallets')
     op.drop_table('audit_log')
     # ### end Alembic commands ###

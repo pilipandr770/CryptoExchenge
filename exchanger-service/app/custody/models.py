@@ -24,10 +24,15 @@ class HotWallet(db.Model):
 
 
 class DepositAddress(db.Model):
-    """A per-demo-client deposit address, derived from the hot wallet's HD
-    seed at `derivation_index`. `label` is an operator-assigned free-text
-    identifier (e.g. "demo-investor-1") -- there is no end-user account
-    system in this MVP, see ТЗ section 1."""
+    """A deposit address derived from the hot wallet's HD seed at
+    `derivation_index`. Two ways this gets used:
+    - user-owned (`user_id` set): one persistent address per (user, chain)
+      for the account-based flow (app/accounts/deposits.py) -- a confirmed
+      deposit credits that user's balance directly, no SwapOrder involved.
+    - order-owned (`user_id` null, `label` set): the admin's own
+      `+ New order` flow (app/admin_ui/routes.py) -- a fresh address per
+      order, no registered user behind it.
+    """
 
     __tablename__ = "deposit_addresses"
 
@@ -35,9 +40,13 @@ class DepositAddress(db.Model):
     chain = db.Column(db.String(16), nullable=False)
     address = db.Column(db.String(128), nullable=False, unique=True)
     derivation_index = db.Column(db.Integer, nullable=False)
-    label = db.Column(db.String(128), nullable=False)
+    label = db.Column(db.String(128), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    user = db.relationship("User")
 
     __table_args__ = (
         db.UniqueConstraint("chain", "derivation_index", name="uq_deposit_address_chain_index"),
+        db.UniqueConstraint("user_id", "chain", name="uq_deposit_address_user_chain"),
     )

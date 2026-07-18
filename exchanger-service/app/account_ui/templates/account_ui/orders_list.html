@@ -1,0 +1,23 @@
+{% extends "account_ui/base.html" %}
+{% block title %}Orders{% endblock %}
+{% block content %}
+  <div class="card">
+    <h2>Your orders</h2>
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th>From</th><th>To</th><th>Created</th></tr></thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td><a href="{{ url_for('account_ui.order_detail', order_id=o.id) }}">#{{ o.id }}</a></td>
+          <td>{{ o.status }}</td>
+          <td>{{ o.from_amount }} {{ o.from_asset }}</td>
+          <td>{{ o.to_amount_payout or o.to_amount_quoted or '—' }} {{ o.to_asset }}</td>
+          <td class="muted">{{ o.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted">No orders yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

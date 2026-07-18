@@ -1,0 +1,35 @@
+{% extends "account_ui/base.html" %}
+{% block title %}Withdraw{% endblock %}
+{% block content %}
+  <div class="card">
+    <h2>Your balances</h2>
+    <table>
+      <tbody>
+        {% for asset, amount in balances.items() %}
+        <tr><td>{{ asset }}</td><td>{{ amount }}</td></tr>
+        {% else %}
+        <tr><td class="muted">No balance yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Withdraw</h2>
+    <form method="post">
+      <label for="chain">Chain</label>
+      <select id="chain" name="chain" required>
+        {% for chain in chains %}<option value="{{ chain }}">{{ chain }}</option>{% endfor %}
+      </select>
+      <label for="asset">Asset</label>
+      <input type="text" id="asset" name="asset" placeholder="ETH" required>
+      <label for="amount">Amount</label>
+      <input type="number" step="0.00000001" id="amount" name="amount" required>
+      <label for="withdrawal_address">Destination address</label>
+      <input type="text" id="withdrawal_address" name="withdrawal_address" required>
+      <label for="transfer_amount_eur">EUR-equivalent value (for the compliance threshold check)</label>
+      <input type="number" step="0.01" id="transfer_amount_eur" name="transfer_amount_eur" required>
+      <button type="submit">Withdraw</button>
+    </form>
+  </div>
+{% endblock %}

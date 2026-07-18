@@ -70,3 +70,9 @@ class Config:
     ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
     SECRET_KEY = os.environ.get("SECRET_KEY", "")
+
+    # --- Registered-user accounts (see app/accounts/) ---------------------
+    # Encrypts each user's TOTP 2FA secret at rest (app/accounts/auth.py).
+    # TODO(production): HSM/KMS-backed, same caveat as HOT_WALLET_KEYS_FERNET_KEY.
+    ACCOUNTS_TOTP_ENCRYPTION_KEY = os.environ.get("ACCOUNTS_TOTP_ENCRYPTION_KEY", "")
+    ACCOUNTS_TOTP_ISSUER = os.environ.get("ACCOUNTS_TOTP_ISSUER", "Crypto Exchanger (demo)")

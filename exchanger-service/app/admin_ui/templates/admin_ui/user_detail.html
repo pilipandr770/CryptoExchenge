@@ -1,0 +1,61 @@
+{% extends "admin_ui/base.html" %}
+{% block title %}User #{{ user.id }} - Exchanger Admin{% endblock %}
+{% block content %}
+  <div class="panel">
+    <h2>{{ user.email }} <span class="badge">{{ 'active' if user.is_active else 'inactive' }}</span></h2>
+    <dl class="kv">
+      <dt>Full name</dt><dd>{{ user.full_name }}</dd>
+      <dt>Date of birth</dt><dd>{{ user.date_of_birth or '—' }}</dd>
+      <dt>Country</dt><dd>{{ user.country or '—' }}</dd>
+      <dt>Screening decision</dt><dd>{{ user.screening_decision or '—' }} (score {{ user.screening_score if user.screening_score is not none else '—' }})</dd>
+      <dt>2FA enabled</dt><dd>{{ 'yes' if user.totp_enabled else 'no' }}</dd>
+      <dt>Created</dt><dd class="muted">{{ user.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</dd>
+    </dl>
+  </div>
+
+  <div class="panel action-form">
+    {% if not user.is_active %}
+    <form method="post" action="{{ url_for('admin_ui.approve_user', user_id=user.id) }}">
+      <button type="submit">Approve account</button>
+    </form>
+    {% else %}
+    <form method="post" action="{{ url_for('admin_ui.freeze_user', user_id=user.id) }}">
+      <button type="submit" class="secondary">Freeze account</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <h2>Balances</h2>
+    <table>
+      <thead><tr><th>Asset</th><th>Balance</th></tr></thead>
+      <tbody>
+        {% for asset, amount in balances.items() %}
+        <tr><td>{{ asset }}</td><td>{{ amount }}</td></tr>
+        {% else %}
+        <tr><td colspan="2" class="muted">No balance.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Orders</h2>
+    <table>
+      <thead><tr><th>ID</th><th>Status</th><th>From</th><th>To</th><th>Created</th></tr></thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td><a href="{{ url_for('admin_ui.order_detail', order_id=o.id) }}">#{{ o.id }}</a></td>
+          <td><span class="badge">{{ o.status }}</span></td>
+          <td>{{ o.from_amount }} {{ o.from_asset }}</td>
+          <td>{{ o.to_amount_payout or o.to_amount_quoted or '—' }} {{ o.to_asset }}</td>
+          <td class="muted">{{ o.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted">No orders yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

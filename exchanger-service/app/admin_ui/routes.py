@@ -11,6 +11,8 @@ from functools import wraps
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from sqlalchemy import select
 
+from app.accounts.balances import all_user_balances
+from app.accounts.models import User
 from app.audit.models import AuditLog
 from app.compliance_client.aml18_client import Aml18Client
 from app.compliance_client.screening_gate import WalletOwnershipVerificationFailedError, submit_withdrawal_verification
@@ -545,3 +547,61 @@ def ledger():
     )
 
     return render_template("admin_ui/ledger.html", results=results, ledger_only=ledger_only, fetch_errors=fetch_errors)
+
+
+# --- registered users (app/accounts) --------------------------------------
+
+
+@admin_ui_bp.get("/users")
+@login_required
+def users_list():
+    users = User.query.order_by(User.created_at.desc()).all()
+    return render_template("admin_ui/users_list.html", users=users)
+
+
+@admin_ui_bp.get("/users/<int:user_id>")
+@login_required
+def user_detail(user_id):
+    user = db.session.get(User, user_id)
+    if user is None:
+        flash("User not found.", "error")
+        return redirect(url_for("admin_ui.users_list"))
+
+    balances = all_user_balances(user.id)
+    orders = SwapOrder.query.filter_by(user_id=user.id).order_by(SwapOrder.created_at.desc()).all()
+    return render_template("admin_ui/user_detail.html", user=user, balances=balances, orders=orders)
+
+
+@admin_ui_bp.post("/users/<int:user_id>/approve")
+@login_required
+def approve_user(user_id):
+    user = db.session.get(User, user_id)
+    if user is None:
+        flash("User not found.", "error")
+        return redirect(url_for("admin_ui.users_list"))
+
+    operator = session.get("admin_username", current_app.config["ADMIN_USERNAME"])
+    previous_decision = user.screening_decision
+    user.is_active = True
+    _audit(operator, "user_approved", "User", str(user.id), {"previous_screening_decision": previous_decision})
+    db.session.commit()
+
+    flash(f"Account {user.email} approved.", "success")
+    return redirect(url_for("admin_ui.user_detail", user_id=user_id))
+
+
+@admin_ui_bp.post("/users/<int:user_id>/freeze")
+@login_required
+def freeze_user(user_id):
+    user = db.session.get(User, user_id)
+    if user is None:
+        flash("User not found.", "error")
+        return redirect(url_for("admin_ui.users_list"))
+
+    operator = session.get("admin_username", current_app.config["ADMIN_USERNAME"])
+    user.is_active = False
+    _audit(operator, "user_frozen", "User", str(user.id), {})
+    db.session.commit()
+
+    flash(f"Account {user.email} frozen.", "success")
+    return redirect(url_for("admin_ui.user_detail", user_id=user_id))

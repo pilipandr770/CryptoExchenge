@@ -7,12 +7,20 @@ scanning, out of scope for this ETH/WBTC-centric MVP (ТЗ section 2).
 for L2/testnet demo runs -- see EVM_MIN_CONFIRMATIONS).
 """
 
+from decimal import Decimal
+
 import requests
 
+from app.accounts.balances import credit_user, is_tx_already_credited
 from app.custody.models import DepositAddress
+from app.extensions import db
+from app.ledger.models import LedgerEntry
 from app.swap import orchestrator
 from app.swap.models import SwapOrder
 from app.swap.states import DEPOSIT_PENDING
+
+NATIVE_ASSET_BY_CHAIN = {"ethereum": "ETH", "polygon": "MATIC"}
+_NATIVE_ASSET_DECIMALS = 18
 
 
 class EvmListenerError(Exception):
@@ -90,3 +98,59 @@ class EvmListener:
                 del by_address[to_address]  # one deposit per order for MVP
 
         return confirmed
+
+    def scan_for_user_deposits(self, from_block: int, to_block: int, chain: str = "ethereum") -> list:
+        """Scans [from_block, to_block] for native transfers into any
+        registered user's persistent deposit address on `chain` (see
+        app/accounts/deposits.py), crediting their balance directly -- no
+        SwapOrder involved. Unlike scan_range()'s order-scoped addresses
+        (good for exactly one deposit), a user's address is reused
+        indefinitely, so each transaction is checked against
+        is_tx_already_credited() before crediting -- a repeat poll over the
+        same block range must never double-credit. Returns a list of
+        (user_id, asset, amount, tx_hash) tuples credited this call."""
+        user_addresses = (
+            DepositAddress.query
+            .filter(DepositAddress.user_id.isnot(None), DepositAddress.chain == chain)
+            .all()
+        )
+        if not user_addresses:
+            return []
+
+        asset = NATIVE_ASSET_BY_CHAIN.get(chain, chain.upper())
+        by_address = {da.address.lower(): da for da in user_addresses}
+        head = self.latest_block_number()
+        credited = []
+
+        for block_number in range(from_block, to_block + 1):
+            block = self.get_block(block_number)
+            if block is None:
+                continue
+
+            confirmations = head - int(block["number"], 16) + 1
+            if confirmations < self.min_confirmations:
+                continue
+
+            for tx in block.get("transactions", []):
+                to_address = (tx.get("to") or "").lower()
+                deposit_address = by_address.get(to_address)
+                if deposit_address is None:
+                    continue
+                value_wei = int(tx["value"], 16)
+                if value_wei <= 0:
+                    continue
+
+                tx_hash = tx["hash"]
+                if is_tx_already_credited(tx_hash):
+                    continue
+
+                amount = Decimal(value_wei) / (10 ** _NATIVE_ASSET_DECIMALS)
+                db.session.add(LedgerEntry(
+                    account=f"treasury:{chain}:{asset}", asset=asset,
+                    amount=amount, entry_type="deposit", tx_hash=tx_hash,
+                ))
+                credit_user(deposit_address.user_id, asset, amount, entry_type="deposit", tx_hash=tx_hash)
+                credited.append((deposit_address.user_id, asset, amount, tx_hash))
+
+        db.session.commit()
+        return credited

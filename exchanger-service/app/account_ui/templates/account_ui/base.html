@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Exchange{% endblock %}</title>
+  <title>{% block title %}Account{% endblock %}</title>
   <style>
     :root {
       --bg: #0f1115; --panel: #171a21; --text: #eef0f4; --muted: #9aa2b1;
@@ -16,10 +16,14 @@
       background: var(--bg); color: var(--text); min-height: 100vh;
     }
     header {
-      padding: 20px 24px; text-align: center; border-bottom: 1px solid var(--border);
+      padding: 16px 24px; display: flex; align-items: center; gap: 16px;
+      border-bottom: 1px solid var(--border);
     }
-    header h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: 0.02em; }
-    header p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+    header h1 { font-size: 16px; margin: 0; font-weight: 700; }
+    header nav { display: flex; gap: 14px; }
+    header nav a { color: var(--muted); text-decoration: none; font-size: 14px; }
+    header nav a:hover { color: var(--accent); }
+    header .spacer { flex: 1; }
     main { max-width: 480px; margin: 0 auto; padding: 32px 20px 60px; }
     .card {
       background: var(--panel); border: 1px solid var(--border);
@@ -39,6 +43,7 @@
       background: var(--accent); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
     }
     button:hover { background: var(--accent-hover); }
+    button.secondary { background: var(--border); }
     .muted { color: var(--muted); font-size: 13px; }
     .flash { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
     .flash.success { background: rgba(47,191,113,0.12); color: var(--ok); border: 1px solid rgba(47,191,113,0.3); }
@@ -55,15 +60,30 @@
     .status-badge.failed { background: var(--bad); }
     .amount-preview { text-align: center; padding: 10px 0; }
     .amount-preview .big { font-size: 28px; font-weight: 700; }
-    .kv { display: grid; grid-template-columns: 140px 1fr; gap: 8px 12px; font-size: 14px; margin-top: 6px; }
+    .kv { display: grid; grid-template-columns: 160px 1fr; gap: 8px 12px; font-size: 14px; }
     .kv dt { color: var(--muted); } .kv dd { margin: 0; word-break: break-all; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+    a { color: var(--accent); }
     footer { text-align: center; padding: 20px; font-size: 12px; color: var(--muted); }
   </style>
 </head>
 <body>
   <header>
     <h1>Crypto Exchanger</h1>
-    <p>Demo build -- personal-funds MVP, not a licensed public exchange</p>
+    {% if session.user_id %}
+    <nav>
+      <a href="{{ url_for('account_ui.dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('account_ui.deposit') }}">Deposit</a>
+      <a href="{{ url_for('account_ui.swap_form') }}">Swap</a>
+      <a href="{{ url_for('account_ui.withdraw_form') }}">Withdraw</a>
+      <a href="{{ url_for('account_ui.transfer_form') }}">Transfer</a>
+      <a href="{{ url_for('account_ui.orders_list') }}">Orders</a>
+    </nav>
+    <div class="spacer"></div>
+    <a href="{{ url_for('account_ui.logout') }}">Log out</a>
+    {% endif %}
   </header>
   <main>
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -73,6 +93,6 @@
     {% endwith %}
     {% block content %}{% endblock %}
   </main>
-  <footer>No account needed. Track your order with the link on this page.</footer>
+  <footer>Demo build -- personal-funds MVP, not a licensed public exchange.</footer>
 </body>
 </html>

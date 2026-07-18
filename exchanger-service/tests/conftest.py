@@ -13,6 +13,8 @@ class TestConfig(Config):
     AML18_BASE_URL = "http://aml18.test"
     AML18_API_KEY = "aml18_sk_test"
     ZEROX_API_BASE_URL = "https://api.0x.test"
+    ACCOUNTS_TOTP_ENCRYPTION_KEY = "471GHlAG75PSyrdGrKQ_LnDxxBBoCd5VFGm1zG91CyI="
+    ACCOUNTS_TOTP_ISSUER = "Test Exchanger"
 
 
 @pytest.fixture

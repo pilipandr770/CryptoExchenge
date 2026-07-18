@@ -1,0 +1,24 @@
+{% extends "account_ui/base.html" %}
+{% block title %}Deposit{% endblock %}
+{% block content %}
+  <div class="card">
+    <h2>Deposit</h2>
+    <form method="post">
+      <label for="chain">Chain</label>
+      <select id="chain" name="chain" required>
+        {% for chain in chains %}
+        <option value="{{ chain }}" {{ 'selected' if selected_chain == chain }}>{{ chain }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">Get deposit address</button>
+    </form>
+  </div>
+
+  {% if address %}
+  <div class="card">
+    <div class="muted">Your persistent {{ address.chain }} deposit address</div>
+    <code>{{ address.address }}</code>
+    <p class="muted" style="margin-top: 10px;">This address is yours permanently -- send any amount, any time, and it will be credited to your balance once confirmed on-chain.</p>
+  </div>
+  {% endif %}
+{% endblock %}

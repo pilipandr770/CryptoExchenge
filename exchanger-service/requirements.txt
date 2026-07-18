@@ -9,3 +9,6 @@ eth-account>=0.13
 bitcoin-utils>=0.7
 cryptography>=43.0
 psycopg[binary]>=3.2
+pyotp>=2.9
+qrcode>=8.2
+pypng>=0.20

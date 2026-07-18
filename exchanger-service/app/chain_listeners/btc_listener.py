@@ -5,9 +5,14 @@ dev-demo compromise (BTC_MIN_CONFIRMATIONS default); raise to 2-6 for
 anything resembling production.
 """
 
+from decimal import Decimal
+
 import requests
 
+from app.accounts.balances import credit_user, is_tx_already_credited
 from app.custody.models import DepositAddress
+from app.extensions import db
+from app.ledger.models import LedgerEntry
 from app.swap import orchestrator
 from app.swap.models import SwapOrder
 from app.swap.states import DEPOSIT_PENDING
@@ -67,3 +72,46 @@ class BtcListener:
                 break  # one deposit per order for MVP
 
         return confirmed
+
+    def poll_user_deposits(self) -> list:
+        """Checks every registered user's persistent BTC deposit address
+        (see app/accounts/deposits.py) for confirmed UTXOs and credits
+        their balance directly -- no SwapOrder involved. Unlike poll()'s
+        order-scoped addresses (good for exactly one deposit), a user's
+        address is reused indefinitely, so each UTXO is checked against
+        is_tx_already_credited() before crediting. Returns a list of
+        (user_id, "BTC", amount, txid) tuples credited this call."""
+        user_addresses = (
+            DepositAddress.query
+            .filter(DepositAddress.user_id.isnot(None), DepositAddress.chain == "bitcoin")
+            .all()
+        )
+        if not user_addresses:
+            return []
+
+        tip = self.tip_height()
+        credited = []
+
+        for deposit_address in user_addresses:
+            for utxo in self.utxos_for_address(deposit_address.address):
+                status = utxo.get("status", {})
+                if not status.get("confirmed"):
+                    continue
+                confirmations = tip - status["block_height"] + 1
+                if confirmations < self.min_confirmations:
+                    continue
+
+                tx_hash = utxo["txid"]
+                if is_tx_already_credited(tx_hash):
+                    continue
+
+                amount = Decimal(utxo["value"]) / Decimal(10 ** 8)
+                db.session.add(LedgerEntry(
+                    account="treasury:bitcoin:BTC", asset="BTC",
+                    amount=amount, entry_type="deposit", tx_hash=tx_hash,
+                ))
+                credit_user(deposit_address.user_id, "BTC", amount, entry_type="deposit", tx_hash=tx_hash)
+                credited.append((deposit_address.user_id, "BTC", amount, tx_hash))
+
+        db.session.commit()
+        return credited

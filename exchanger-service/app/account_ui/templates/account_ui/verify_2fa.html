@@ -1,0 +1,12 @@
+{% extends "account_ui/base.html" %}
+{% block title %}Enter your 2FA code{% endblock %}
+{% block content %}
+  <div class="card">
+    <h2>Enter your 2FA code</h2>
+    <form method="post">
+      <label for="code">6-digit code from your authenticator app</label>
+      <input type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]*" required autofocus>
+      <button type="submit">Log in</button>
+    </form>
+  </div>
+{% endblock %}

@@ -25,12 +25,22 @@ class SwapOrder(db.Model):
     status = db.Column(db.String(32), nullable=False, default=DEPOSIT_PENDING, index=True)
 
     # Client identity, for the AML-18 screening gate (POST /screening/check-name
-    # needs at least a name) -- collected up front on public order creation
-    # (app/public_ui), optional for admin-created orders.
+    # needs at least a name) -- used only for admin-created orders with no
+    # registered user behind them; a registered User was already screened
+    # once at signup (see app/accounts/models.py), so these stay null for
+    # funding_source="account_balance" orders.
     client_name = db.Column(db.String(256), nullable=True)
     client_email = db.Column(db.String(256), nullable=True)
     client_date_of_birth = db.Column(db.String(32), nullable=True)
     client_country = db.Column(db.String(256), nullable=True)
+
+    # Which registered User (if any) this order belongs to, and whether it
+    # was funded by a fresh on-chain deposit or debited from that user's
+    # existing balance. See app/swap/orchestrator.py::lock_quote_from_balance
+    # and the "pure balance withdrawal" pattern (from_asset == to_asset)
+    # documented there.
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    funding_source = db.Column(db.String(24), nullable=False, default="external_deposit")
 
     deposit_address_id = db.Column(db.Integer, db.ForeignKey("deposit_addresses.id"), nullable=True)
     from_chain = db.Column(db.String(16), nullable=False)
@@ -80,15 +90,18 @@ class SwapOrder(db.Model):
 
     deposit_address = db.relationship("DepositAddress")
     ledger_entries = db.relationship("LedgerEntry", back_populates="swap_order")
+    user = db.relationship("User")
 
     def __init__(self, **kwargs):
         # Column-level defaults only apply at flush time -- set these
         # eagerly so a freshly-constructed order has a real starting status
-        # (for mark_status() to validate transitions against) and a real
-        # public_token (for immediate use in a redirect URL) even before
-        # the object is ever added/flushed.
+        # (for mark_status() to validate transitions against), a real
+        # public_token (for immediate use in a redirect URL), and a real
+        # funding_source (checked by orchestrator functions before any
+        # flush) even before the object is ever added/flushed.
         kwargs.setdefault("status", DEPOSIT_PENDING)
         kwargs.setdefault("public_token", uuid4().hex)
+        kwargs.setdefault("funding_source", "external_deposit")
         super().__init__(**kwargs)
 
     def mark_status(self, new_status: str):
