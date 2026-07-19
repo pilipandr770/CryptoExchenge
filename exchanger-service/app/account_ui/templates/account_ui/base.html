@@ -69,14 +69,14 @@
     footer { text-align: center; padding: 20px 20px 90px; font-size: 12px; color: var(--muted); }
     footer .legal-links a { color: var(--muted); margin: 0 6px; }
     footer .legal-links a:hover { color: var(--accent); }
-    .cookie-banner {
+    .site-notice-bar {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
       background: var(--panel); border-top: 1px solid var(--border);
       padding: 14px 20px; display: flex; align-items: center; gap: 16px;
       flex-wrap: wrap; font-size: 13px; color: var(--muted);
     }
-    .cookie-banner p { margin: 0; flex: 1 1 320px; }
-    .cookie-banner button {
+    .site-notice-bar p { margin: 0; flex: 1 1 320px; }
+    .site-notice-bar button {
       width: auto; margin: 0; padding: 8px 18px; font-size: 13px;
     }
   </style>
@@ -115,21 +115,28 @@
     </div>
   </footer>
 
-  <div id="cookie-banner" class="cookie-banner" hidden>
+  <div id="site-notice-bar" class="site-notice-bar" hidden>
     <p>Diese Demo verwendet ausschließlich technisch notwendige Cookies (Login-Sitzung). Es findet kein Tracking und keine Analyse statt. <a href="{{ url_for('legal_ui.datenschutz') }}">Mehr erfahren</a></p>
-    <button id="cookie-accept" type="button">Verstanden</button>
+    <button id="site-notice-ack" type="button">Verstanden</button>
   </div>
   <script>
     (function () {
-      var KEY = "cookie_notice_ack";
-      var banner = document.getElementById("cookie-banner");
-      var button = document.getElementById("cookie-accept");
+      var KEY = "site_notice_ack";
+      var banner = document.getElementById("site-notice-bar");
+      var button = document.getElementById("site-notice-ack");
       if (!banner || !button) return;
-      if (!localStorage.getItem(KEY)) banner.hidden = false;
-      button.addEventListener("click", function () {
-        localStorage.setItem(KEY, "1");
+
+      function dismiss() {
         banner.hidden = true;
-      });
+        banner.style.display = "none";
+        try { localStorage.setItem(KEY, "1"); } catch (e) { /* storage may be blocked; still dismiss */ }
+      }
+
+      var alreadyAcked = false;
+      try { alreadyAcked = !!localStorage.getItem(KEY); } catch (e) { /* treat as not acked */ }
+      if (!alreadyAcked) banner.hidden = false;
+
+      button.addEventListener("click", dismiss);
     })();
   </script>
 </body>
